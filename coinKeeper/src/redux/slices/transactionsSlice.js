@@ -19,6 +19,7 @@ const apiFetchTransactions = async (filters = {}) => {
   // Добавьте фильтрацию по дате, типу и т.д., если необходимо
   return result;
 };
+
 const apiAddTransaction = async (transactionData) => {
   console.log('API Call: addTransaction', transactionData);
   await new Promise(resolve => setTimeout(resolve, FAKE_DELAY));
@@ -48,6 +49,18 @@ const apiDeleteTransaction = async (transactionId) => {
 };
 // --- Конец Mock API ---
 
+export const fetchAllTransactions = createAsyncThunk(
+    'transactions/fetchAllTransactions',
+    async (_, { rejectWithValue }) => {
+      try {
+        // Используем существующий API без ограничений на количество транзакций
+        const data = await apiFetchTransactions({});
+        return data;
+      } catch (error) {
+        return rejectWithValue(error.response?.data?.message || 'Ошибка загрузки всех транзакций');
+      }
+    }
+);
 export const fetchTransactions = createAsyncThunk(
   'transactions/fetchTransactions',
   async (filters, { rejectWithValue }) => {
@@ -167,6 +180,18 @@ const transactionsSlice = createSlice({
         if (recentIndex !== -1) state.recentItems[recentIndex] = action.payload;
         // state.updateStatus = 'succeeded';
       })
+        .addCase(fetchAllTransactions.pending, (state) => {
+          state.status = 'loading';
+          state.error = null;
+        })
+        .addCase(fetchAllTransactions.fulfilled, (state, action) => {
+          state.status = 'succeeded';
+          state.items = action.payload;
+        })
+        .addCase(fetchAllTransactions.rejected, (state, action) => {
+          state.status = 'failed';
+          state.error = action.payload;
+        })
       // Delete Transaction
       .addCase(deleteTransaction.fulfilled, (state, action) => {
         state.items = state.items.filter(t => t.id !== action.payload);
