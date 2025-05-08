@@ -18,3 +18,14 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     </Provider>
   </React.StrictMode>
 );
+import { AuthProvider } from './contexts/AuthContext.jsx'; // Импортируйте AuthProvider
+
+createRoot(document.getElementById('root')).render(
+    <StrictMode>
+        <BrowserRouter>
+            <AuthProvider> {/* Оберните App в AuthProvider */}
+                <App />
+            </AuthProvider>
+        </BrowserRouter>
+    </StrictMode>,
+);

@@ -4,6 +4,8 @@ import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 
 // Импорт страниц
+import React from 'react';
+import { Routes, Route, Link, Navigate } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
@@ -18,6 +20,18 @@ import ProtectedRoute from './components/ProtectedRoute';
 import { logoutUser, selectIsAuthenticated, checkAuthAndFetchProfile } from './redux/slices/authSlice';
 
 import './App.css'; // Общие стили для App
+import { useAuth } from './contexts/AuthContext'; // Импортируйте useAuth
+import './App.css';
+
+// Компонент для защищенных маршрутов
+function ProtectedRoute({ children }) {
+    const { isAuthenticated } = useAuth();
+    if (!isAuthenticated) {
+        // Перенаправляем на страницу входа, если пользователь не аутентифицирован
+        return <Navigate to="/login" replace />;
+    }
+    return children;
+}
 
 function App() {
   const isAuthenticated = useSelector(selectIsAuthenticated);
@@ -85,6 +99,5 @@ function App() {
     </>
   );
 }
-
+// Removed conflicting code and retained the correct version of the App component.
 export default App;
-// src/App.css

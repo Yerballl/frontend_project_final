@@ -1,136 +1,48 @@
+// coinKeeper/src/api.js
 import axios from 'axios';
 
-// Установите базовый URL вашего API
-const API_URL = 'http://localhost:8080'; // Замените на ваш реальный URL API
+const API_URL = 'http://localhost:8080/api/users'; // Или ваш URL API
 
-// Создание экземпляра axios с базовым URL и, возможно, другими настройками
+export const loginUser = async (email, password) => {
+    try {
+        const response = await axios.post(`${API_URL}/login`, { email, password });
+        return response.data; // Обычно сервер возвращает токен и данные пользователя
+    } catch (error) {
+        // Обработка ошибок (например, если сервер вернул ошибку)
+        console.error("Login API error:", error.response || error.message);
+        throw error; // Перебрасываем ошибку для обработки в AuthContext
+    }
+};
+
+// Сюда можно добавить другие функции API, например, для регистрации, получения статистики и т.д.
+// export const registerUser = async (userData) => { ... };
+// export const fetchStats = async () => { ... };
+
+// Можно также настроить инстанс axios с базовым URL и заголовками по умолчанию
 const apiClient = axios.create({
-    baseURL: API_URL,
-    headers: {
-        'Content-Type': 'application/json',
-    },
+    baseURL: 'http://localhost:8080/api', // Ваш базовый URL API
+    // headers: { 'Content-Type': 'application/json' } // Общие заголовки
 });
 
-// Перехватчик запросов для добавления токена авторизации
-apiClient.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem('token'); // Или другое место хранения токена
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-    },
-    (error) => {
-        return Promise.reject(error);
+// Функция для установки токена авторизации для всех запросов через apiClient
+export const setAuthToken = (token) => {
+    if (token) {
+        apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    } else {
+        delete apiClient.defaults.headers.common['Authorization'];
     }
-);
+};
 
-// Функции для взаимодействия с API
-
-// --- Аутентификация ---
-export const registerUser = async (userData) => {
+// Пример использования apiClient для запроса статистики
+export const getStats = async () => {
     try {
-        const response = await apiClient.post('/auth/register', userData);
+        const response = await apiClient.get('/stats');
         return response.data;
     } catch (error) {
-        throw error.response.data;
+        console.error("Get Stats API error:", error.response || error.message);
+        throw error;
     }
 };
 
-export const loginUser = async (credentials) => {
-    try {
-        const response = await apiClient.post('/auth/login', credentials);
-        // Сохранение токена после успешного входа
-        if (response.data.token) {
-            localStorage.setItem('token', response.data.token);
-        }
-        return response.data;
-    } catch (error) {
-        throw error.response.data;
-    }
-};
 
-export const logoutUser = async () => {
-    // В зависимости от реализации API, может потребоваться запрос на сервер
-    localStorage.removeItem('token');
-    // Дополнительно можно отправить запрос на сервер для инвалидации токена
-    // await apiClient.post('/auth/logout');
-    return Promise.resolve();
-};
-
-// --- Транзакции ---
-export const getTransactions = async () => {
-    try {
-        const response = await apiClient.get('/transactions');
-        return response.data;
-    } catch (error) {
-        throw error.response.data;
-    }
-};
-
-export const addTransaction = async (transactionData) => {
-    try {
-        const response = await apiClient.post('/transactions', transactionData);
-        return response.data;
-    } catch (error) {
-        throw error.response.data;
-    }
-};
-
-export const updateTransaction = async (id, transactionData) => {
-    try {
-        const response = await apiClient.put(`/transactions/${id}`, transactionData);
-        return response.data;
-    } catch (error) {
-        throw error.response.data;
-    }
-};
-
-export const deleteTransaction = async (id) => {
-    try {
-        const response = await apiClient.delete(`/transactions/${id}`);
-        return response.data;
-    } catch (error) {
-        throw error.response.data;
-    }
-};
-
-// --- Категории ---
-export const getCategories = async () => {
-    try {
-        const response = await apiClient.get('/categories');
-        return response.data;
-    } catch (error) {
-        throw error.response.data;
-    }
-};
-
-export const addCategory = async (categoryData) => {
-    try {
-        const response = await apiClient.post('/categories', categoryData);
-        return response.data;
-    } catch (error) {
-        throw error.response.data;
-    }
-};
-
-export const deleteCategory = async (id) => {
-    try {
-        const response = await apiClient.delete(`/categories/${id}`);
-        return response.data;
-    } catch (error) {
-        throw error.response.data;
-    }
-};
-
-// --- Статистика ---
-export const getStatistics = async (params) => { // params может содержать { period, startDate, endDate }
-    try {
-        const response = await apiClient.get('/statistics', { params });
-        return response.data;
-    } catch (error) {
-        throw error.response.data;
-    }
-};
-
-export default apiClient;
+export { apiClient }; // Экспортируем настроенный инстанс для использования в других частях приложения
