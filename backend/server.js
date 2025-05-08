@@ -1,88 +1,91 @@
 const express = require('express');
+const bodyParser = require('body-parser');
+const fs = require('fs');
+const path = require('path');
+const cors = require('cors'); // <--- Добавьте эту строку
+
+// Создаем экземпляр Express
 const app = express();
-const port = 3000;
 
-// Middleware для парсинга JSON тел запросов
-app.use(express.json());
+// Используйте CORS middleware
+app.use(cors()); // <--- Добавьте эту строку. Это разрешит все CORS-запросы.
+                 // Для более строгой настройки см. документацию пакета cors.
 
-// Хранилище данных в памяти (для примера)
-let items = [
-    { id: 1, name: 'Первый элемент' },
-    { id: 2, name: 'Второй элемент' }
-];
-let nextId = 3;
+app.use(bodyParser.json());
 
-app.get('/', (req, res) => {
-    res.send('Привет от имитации бэкенда на Express!');
+// Пути к JSON-файлам
+const usersFilePath = path.join(__dirname, 'users.json');
+const transactionsFilePath = path.join(__dirname, 'transactions.json');
+
+// Функция для чтения данных из JSON-файла
+const readJsonFile = (filePath) => {
+    if (!fs.existsSync(filePath)) {
+        return [];
+    }
+    const data = fs.readFileSync(filePath, 'utf8');
+    return JSON.parse(data);
+};
+
+// Функция для записи данных в JSON-файл
+const writeJsonFile = (filePath, data) => {
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
+};
+
+// Маршрут для логина пользователя
+app.post('/api/users/login', (req, res) => {
+    console.log("Login request received:", req.body);
+    const { email, password } = req.body;
+    const users = readJsonFile(usersFilePath);
+
+    const user = users.find((u) => u.email === email && u.password === password);
+    if (user) {
+        res.json({
+            message: 'Успешный вход',
+            user,
+        });
+    } else {
+        res.status(401).json({ message: 'Неверные учетные данные' });
+    }
 });
 
-// Пример эндпоинта для GET запроса
-app.get('/api/data', (req, res) => {
-    res.json({ message: 'Это тестовые данные', value: 42 });
-});
+// Маршрут для добавления транзакции
+app.post('/api/transactions', (req, res) => {
+    const { user_id, category_id, type, amount, transaction_date, comment } = req.body;
 
-// Пример эндпоинта для POST запроса
-app.post('/api/submit', (req, res) => { // express.json() уже используется глобально
-    console.log('Получены данные:', req.body);
-    res.status(201).json({ message: 'Данные успешно получены', receivedData: req.body });
-});
+    const transactions = readJsonFile(transactionsFilePath);
 
-// --- Новые эндпоинты ---
-
-// GET эндпоинт для получения списка всех элементов
-app.get('/api/items', (req, res) => {
-    res.json(items);
-});
-
-// POST эндпоинт для добавления нового элемента
-app.post('/api/items', (req, res) => {
-    const newItem = {
-        id: nextId++,
-        name: req.body.name || 'Безымянный элемент' // Предполагаем, что в теле запроса есть поле name
+    const newTransaction = {
+        id: transactions.length ? transactions[transactions.length - 1].id + 1 : 1,
+        user_id,
+        category_id,
+        type,
+        amount,
+        transaction_date,
+        comment,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
     };
-    items.push(newItem);
-    console.log('Добавлен новый элемент:', newItem);
-    res.status(201).json(newItem);
+
+    transactions.push(newTransaction);
+    writeJsonFile(transactionsFilePath, transactions);
+
+    res.status(201).json({
+        message: 'Транзакция успешно добавлена',
+        transaction: newTransaction,
+    });
 });
 
-// GET эндпоинт для получения элемента по ID
-app.get('/api/items/:id', (req, res) => {
-    const itemId = parseInt(req.params.id, 10);
-    const item = items.find(i => i.id === itemId);
-    if (item) {
-        res.json(item);
-    } else {
-        res.status(404).json({ message: 'Элемент не найден' });
-    }
+// Маршрут для получения всех транзакций пользователя
+app.get('/api/transactions/:userId', (req, res) => {
+    const { userId } = req.params;
+    const transactions = readJsonFile(transactionsFilePath);
+
+    const userTransactions = transactions.filter((t) => t.user_id === parseInt(userId, 10));
+    res.json(userTransactions);
 });
 
-// PUT эндпоинт для обновления элемента по ID
-app.put('/api/items/:id', (req, res) => {
-    const itemId = parseInt(req.params.id, 10);
-    const itemIndex = items.findIndex(i => i.id === itemId);
-    if (itemIndex !== -1) {
-        items[itemIndex] = { ...items[itemIndex], ...req.body };
-        console.log('Обновлен элемент:', items[itemIndex]);
-        res.json(items[itemIndex]);
-    } else {
-        res.status(404).json({ message: 'Элемент не найден для обновления' });
-    }
-});
-
-// DELETE эндпоинт для удаления элемента по ID
-app.delete('/api/items/:id', (req, res) => {
-    const itemId = parseInt(req.params.id, 10);
-    const itemIndex = items.findIndex(i => i.id === itemId);
-    if (itemIndex !== -1) {
-        const deletedItem = items.splice(itemIndex, 1);
-        console.log('Удален элемент:', deletedItem[0]);
-        res.json({ message: 'Элемент успешно удален', item: deletedItem[0] });
-    } else {
-        res.status(404).json({ message: 'Элемент не найден для удаления' });
-    }
-});
-
-
-app.listen(port, () => {
-    console.log(`Express сервер запущен по адресу http://localhost:${port}`);
+// Запуск сервера
+const PORT = 8080;
+app.listen(PORT, () => {
+    console.log(`Сервер запущен на http://localhost:${PORT}`);
 });
