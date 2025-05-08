@@ -54,6 +54,7 @@ const authenticateToken = (req, res, next) => {
 
 // Маршрут для получения данных текущего пользователя
 app.get('/api/users/me', authenticateToken, (req, res) => {
+    console.log("User data request received:", req.user);
     const users = readJsonFile(usersFilePath);
     const user = users.find(u => u.id === req.user.id);
 
