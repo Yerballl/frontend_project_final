@@ -2,20 +2,23 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const fs = require('fs');
 const path = require('path');
-const cors = require('cors'); // <--- Добавьте эту строку
+const cors = require('cors');
+const jwt = require('jsonwebtoken'); // <--- Добавьте эту строку
 
 // Создаем экземпляр Express
 const app = express();
 
 // Используйте CORS middleware
-app.use(cors()); // <--- Добавьте эту строку. Это разрешит все CORS-запросы.
-                 // Для более строгой настройки см. документацию пакета cors.
+app.use(cors());
 
 app.use(bodyParser.json());
 
 // Пути к JSON-файлам
 const usersFilePath = path.join(__dirname, 'users.json');
 const transactionsFilePath = path.join(__dirname, 'transactions.json');
+
+// Секретный ключ для JWT. В реальном приложении его лучше хранить в переменных окружения.
+const JWT_SECRET = 'your-super-secret-key'; // <--- Замените на ваш секретный ключ
 
 // Функция для чтения данных из JSON-файла
 const readJsonFile = (filePath) => {
@@ -31,6 +34,43 @@ const writeJsonFile = (filePath, data) => {
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
 };
 
+// Middleware для проверки JWT токена
+const authenticateToken = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1]; // Формат: Bearer TOKEN
+
+    if (!token) {
+        return res.status(401).json({ message: 'Требуется авторизация' });
+    }
+
+    jwt.verify(token, JWT_SECRET, (err, decoded) => {
+        if (err) {
+            return res.status(403).json({ message: 'Неверный или устаревший токен' });
+        }
+        req.user = decoded; // Сохраняем данные из токена в объекте запроса
+        next();
+    });
+};
+
+// Маршрут для получения данных текущего пользователя
+app.get('/api/users/me', authenticateToken, (req, res) => {
+    const users = readJsonFile(usersFilePath);
+    const user = users.find(u => u.id === req.user.id);
+
+    if (!user) {
+        return res.status(404).json({ message: 'Пользователь не найден' });
+    }
+
+    // Возвращаем данные пользователя без пароля
+    res.json({
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        created_at: user.created_at,
+        updated_at: user.updated_at
+    });
+});
+
 // Маршрут для логина пользователя
 app.post('/api/users/login', (req, res) => {
     console.log("Login request received:", req.body);
@@ -39,9 +79,23 @@ app.post('/api/users/login', (req, res) => {
 
     const user = users.find((u) => u.email === email && u.password === password);
     if (user) {
+        // Создаем токен
+        // Не включайте пароль или другую чувствительную информацию в payload токена
+        const tokenPayload = {
+            id: user.id,
+            email: user.email,
+            name: user.name
+        };
+        const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '1h' }); // Токен действителен 1 час
+
         res.json({
             message: 'Успешный вход',
-            user,
+            user: { // Возвращаем только необходимую информацию о пользователе
+                id: user.id,
+                email: user.email,
+                name: user.name
+            },
+            token, // <--- Возвращаем токен
         });
     } else {
         res.status(401).json({ message: 'Неверные учетные данные' });
