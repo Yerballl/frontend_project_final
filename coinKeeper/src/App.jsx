@@ -1,32 +1,66 @@
-import { Routes, Route, Link } from 'react-router-dom';
+import React from 'react';
+import { Routes, Route, Link, Navigate } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
-// import RegisterPage from './pages/RegisterPage';
-// import DashboardPage from './pages/DashboardPage';
+import RegisterPage from './pages/RegisterPage';
+import DashboardPage from './pages/DashboardPage';
 import StatsPage from './pages/StatsPage';
-import SettingsPage from './pages/SettingsPage';
+import { useAuth } from './contexts/AuthContext'; // Импортируйте useAuth
 import './App.css';
 
+// Компонент для защищенных маршрутов
+function ProtectedRoute({ children }) {
+    const { isAuthenticated } = useAuth();
+    if (!isAuthenticated) {
+        // Перенаправляем на страницу входа, если пользователь не аутентифицирован
+        return <Navigate to="/login" replace />;
+    }
+    return children;
+}
+
 function App() {
+    const { isAuthenticated, logout } = useAuth();
+
     return (
         <>
-            <p>Hello, World!</p>
             <nav>
                 <ul>
-                    <li><Link to="/login">Вход</Link></li>
-                    <li><Link to="/register">Регистрация</Link></li>
-                    <li><Link to="/dashboard">Панель</Link></li>
-                    <li><Link to="/stats">Статистика</Link></li>
-                    <li><Link to="/settings">Настройки</Link></li>
+                    <li><Link to="/">Главная (Дашборд)</Link></li>
+                    {isAuthenticated && <li><Link to="/stats">Статистика</Link></li>}
+                    {!isAuthenticated && <li><Link to="/register">Регистрация</Link></li>}
+                    {!isAuthenticated && <li><Link to="/login">Вход</Link></li>}
+                    {isAuthenticated && (
+                        <li>
+                            <button onClick={logout} style={{ background: 'none', border: 'none', color: 'blue', textDecoration: 'underline', cursor: 'pointer', padding: 0, fontSize: 'inherit' }}>
+                                Выход
+                            </button>
+                        </li>
+                    )}
                 </ul>
             </nav>
-            <Routes>
-                <Route path="/login" element={<LoginPage />} />
-                {/*<Route path="/register" element={<RegisterPage />} />*/}
-                {/*<Route path="/dashboard" element={<DashboardPage />} />*/}
-                <Route path="/stats" element={<StatsPage />} />
-                <Route path="/settings" element={<SettingsPage />} />
-                {/*<Route path="/" element={<DashboardPage />} />*/}
-            </Routes>
+            <main>
+                <Routes>
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/register" element={<RegisterPage />} />
+                    <Route
+                        path="/"
+                        element={
+                            <ProtectedRoute>
+                                <DashboardPage />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/stats"
+                        element={
+                            <ProtectedRoute>
+                                <StatsPage />
+                            </ProtectedRoute>
+                        }
+                    />
+                    {/* Можно добавить маршрут для ненайденных страниц */}
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+            </main>
         </>
     );
 }
