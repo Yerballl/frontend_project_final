@@ -1,0 +1,17 @@
+{
+  "name": "coinkeeper",
+  "version": "1.0.0",
+  "description": "This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.",
+  "main": "eslint.config.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "tailwindcss": "^4.1.5"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.1.5"
+  }
+}
