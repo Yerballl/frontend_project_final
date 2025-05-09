@@ -59,10 +59,6 @@ function App() {
                     <Route path="*" element={<NotFoundPage />} />
                 </Routes>
             </main>
-
-            <footer className="app-footer">
-                <p>&copy; {new Date().getFullYear()} CoinKeeper App</p>
-            </footer>
         </>
     );
 }
