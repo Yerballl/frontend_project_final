@@ -257,6 +257,25 @@ app.delete('/api/categories/:id', authenticateToken, (req, res) => {
     res.json({ message: 'Категория успешно удалена', id: parseInt(id) });
 });
 
+app.get('/api/balance', authenticateToken, (req, res) => {
+    const transactions = readJsonFile(transactionsFilePath);
+
+    // Получаем транзакции пользователя
+    const userTransactions = transactions.filter(t => t.user_id === req.user.id);
+
+    // Вычисляем баланс
+    let balance = 0;
+    userTransactions.forEach(transaction => {
+        if (transaction.type === 'income') {
+            balance += parseFloat(transaction.amount);
+        } else if (transaction.type === 'expense') {
+            balance -= parseFloat(transaction.amount);
+        }
+    });
+
+    res.json({ amount: balance });
+});
+
 // Запуск сервера
 const PORT = 8080;
 app.listen(PORT, () => {
