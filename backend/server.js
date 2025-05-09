@@ -18,7 +18,7 @@ const usersFilePath = path.join(__dirname, 'users.json');
 const transactionsFilePath = path.join(__dirname, 'transactions.json');
 
 // Секретный ключ для JWT. В реальном приложении его лучше хранить в переменных окружения.
-const JWT_SECRET = 'your-super-secret-key'; // <--- Замените на ваш секретный ключ
+const JWT_SECRET = 'nantkhun'; // <--- Замените на ваш секретный ключ
 
 // Функция для чтения данных из JSON-файла
 const readJsonFile = (filePath) => {
@@ -137,6 +137,52 @@ app.get('/api/transactions/:userId', (req, res) => {
 
     const userTransactions = transactions.filter((t) => t.user_id === parseInt(userId, 10));
     res.json(userTransactions);
+});
+
+// Маршрут для регистрации нового пользователя
+app.post('/api/users/register', (req, res) => {
+    console.log("Register request received:", req.body);
+    const { name, email, password } = req.body;
+    const users = readJsonFile(usersFilePath);
+
+    // Проверяем, существует ли уже пользователь с таким email
+    const existingUser = users.find(u => u.email === email);
+    if (existingUser) {
+        return res.status(409).json({ message: 'Пользователь с таким email уже существует' });
+    }
+
+    // Создаем нового пользователя
+    const newUser = {
+        id: users.length ? users[users.length - 1].id + 1 : 1,
+        name,
+        email,
+        password, // В реальном приложении пароль должен быть хэширован
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+    };
+
+    // Добавляем пользователя в файл
+    users.push(newUser);
+    writeJsonFile(usersFilePath, users);
+
+    // Создаем токен
+    const tokenPayload = {
+        id: newUser.id,
+        email: newUser.email,
+        name: newUser.name
+    };
+    const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '1h' });
+
+    // Отправляем ответ
+    res.status(201).json({
+        message: 'Пользователь успешно зарегистрирован',
+        user: {
+            id: newUser.id,
+            email: newUser.email,
+            name: newUser.name
+        },
+        token
+    });
 });
 
 // Запуск сервера
