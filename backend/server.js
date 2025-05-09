@@ -52,6 +52,46 @@ const authenticateToken = (req, res, next) => {
     });
 };
 
+
+/* TRANSACTIONS */
+// Маршрут для добавления транзакции
+app.post('/api/transactions', (req, res) => {
+    const { user_id, category_id, type, amount, transaction_date, comment } = req.body;
+
+    const transactions = readJsonFile(transactionsFilePath);
+
+    const newTransaction = {
+        id: transactions.length ? transactions[transactions.length - 1].id + 1 : 1,
+        user_id,
+        category_id,
+        type,
+        amount,
+        transaction_date,
+        comment,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+    };
+
+    transactions.push(newTransaction);
+    writeJsonFile(transactionsFilePath, transactions);
+
+    res.status(201).json({
+        message: 'Транзакция успешно добавлена',
+        transaction: newTransaction,
+    });
+});
+
+// Маршрут для получения всех транзакций пользователя
+app.get('/api/transactions/:userId', (req, res) => {
+    const { userId } = req.params;
+    const transactions = readJsonFile(transactionsFilePath);
+
+    const userTransactions = transactions.filter((t) => t.user_id === parseInt(userId, 10));
+    res.json(userTransactions);
+});
+
+
+/* USERS */
 // Маршрут для получения данных текущего пользователя
 app.get('/api/users/me', authenticateToken, (req, res) => {
     console.log("User data request received:", req.user);
@@ -103,42 +143,6 @@ app.post('/api/users/login', (req, res) => {
     }
 });
 
-// Маршрут для добавления транзакции
-app.post('/api/transactions', (req, res) => {
-    const { user_id, category_id, type, amount, transaction_date, comment } = req.body;
-
-    const transactions = readJsonFile(transactionsFilePath);
-
-    const newTransaction = {
-        id: transactions.length ? transactions[transactions.length - 1].id + 1 : 1,
-        user_id,
-        category_id,
-        type,
-        amount,
-        transaction_date,
-        comment,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-    };
-
-    transactions.push(newTransaction);
-    writeJsonFile(transactionsFilePath, transactions);
-
-    res.status(201).json({
-        message: 'Транзакция успешно добавлена',
-        transaction: newTransaction,
-    });
-});
-
-// Маршрут для получения всех транзакций пользователя
-app.get('/api/transactions/:userId', (req, res) => {
-    const { userId } = req.params;
-    const transactions = readJsonFile(transactionsFilePath);
-
-    const userTransactions = transactions.filter((t) => t.user_id === parseInt(userId, 10));
-    res.json(userTransactions);
-});
-
 // Маршрут для регистрации нового пользователя
 app.post('/api/users/register', (req, res) => {
     console.log("Register request received:", req.body);
@@ -185,6 +189,8 @@ app.post('/api/users/register', (req, res) => {
     });
 });
 
+
+/* CATEGORIES */
 // Получение всех категорий пользователя
 app.get('/api/categories', authenticateToken, (req, res) => {
     const categories = readJsonFile(categoriesFilePath);
@@ -257,6 +263,9 @@ app.delete('/api/categories/:id', authenticateToken, (req, res) => {
     res.json({ message: 'Категория успешно удалена', id: parseInt(id) });
 });
 
+
+/* BALANCE */
+// Получение баланса пользователя
 app.get('/api/balance', authenticateToken, (req, res) => {
     const transactions = readJsonFile(transactionsFilePath);
 
