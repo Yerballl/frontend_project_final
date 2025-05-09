@@ -74,9 +74,18 @@ const DashboardPage = () => {
 
   const handleSaveTransaction = (transactionData) => {
     if (transactionData.id) {
-      dispatch(updateTransaction(transactionData));
+      dispatch(updateTransaction(transactionData))
+          .then(() => {
+            dispatch(fetchUserBalance());
+            setIsTransactionModalOpen(false);
+          });
     } else {
-      dispatch(addTransaction(transactionData));
+      // Добавляем новую транзакцию и затем обновляем баланс
+      dispatch(addTransaction(transactionData))
+          .then(() => {
+            dispatch(fetchUserBalance());
+            setIsTransactionModalOpen(false);
+          });
     }
   };
 

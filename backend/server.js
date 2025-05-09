@@ -55,19 +55,74 @@ const authenticateToken = (req, res, next) => {
 
 /* TRANSACTIONS */
 // Маршрут для добавления транзакции
-app.post('/api/transactions', (req, res) => {
-    const { user_id, category_id, type, amount, transaction_date, comment } = req.body;
+// Получение транзакций с фильтрацией и пагинацией
+app.get('/api/transactions', authenticateToken, (req, res) => {
+    const transactions = readJsonFile(transactionsFilePath);
+
+    // Получаем только транзакции текущего пользователя
+    let userTransactions = transactions.filter(t => t.user_id === req.user.id);
+
+    // Применяем фильтры
+    if (req.query.categoryId) {
+        userTransactions = userTransactions.filter(t =>
+            t.category_id === parseInt(req.query.categoryId, 10));
+    }
+
+    if (req.query.type) {
+        userTransactions = userTransactions.filter(t => t.type === req.query.type);
+    }
+
+    if (req.query.startDate) {
+        const startDate = new Date(req.query.startDate);
+        userTransactions = userTransactions.filter(t =>
+            new Date(t.transaction_date) >= startDate);
+    }
+
+    if (req.query.endDate) {
+        const endDate = new Date(req.query.endDate);
+        userTransactions = userTransactions.filter(t =>
+            new Date(t.transaction_date) <= endDate);
+    }
+
+    // Подготовка к пагинации
+    const offset = parseInt(req.query.offset, 10) || 0;
+    const limit = parseInt(req.query.limit, 10) || userTransactions.length;
+
+    // Применяем пагинацию
+    const paginatedTransactions = userTransactions
+        .sort((a, b) => new Date(b.transaction_date) - new Date(a.transaction_date))
+        .slice(offset, offset + limit);
+
+    res.json(paginatedTransactions);
+});
+
+// POST-метод для создания транзакции
+app.post('/api/transactions', authenticateToken, (req, res) => {
+    const { category_id, type, amount, transaction_date, comment } = req.body;
+
+    // Проверка обязательных полей
+    if (!category_id || !type || !amount || !transaction_date) {
+        return res.status(400).json({
+            message: 'Необходимо указать category_id, type, amount и transaction_date'
+        });
+    }
+
+    // Проверка суммы - используем Math.abs для получения абсолютного значения
+    const amountValue = Math.abs(parseFloat(amount));
+    if (amountValue <= 0 || isNaN(amountValue)) {
+        return res.status(400).json({ message: 'Сумма должна быть числом больше нуля' });
+    }
 
     const transactions = readJsonFile(transactionsFilePath);
 
     const newTransaction = {
-        id: transactions.length ? transactions[transactions.length - 1].id + 1 : 1,
-        user_id,
-        category_id,
+        id: transactions.length ? Math.max(...transactions.map(t => t.id)) + 1 : 1,
+        user_id: req.user.id,
+        category_id: parseInt(category_id, 10),
         type,
-        amount,
+        amount: amountValue.toFixed(2), // Всегда сохраняем положительное значение
         transaction_date,
-        comment,
+        comment: comment || null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
     };
@@ -75,19 +130,62 @@ app.post('/api/transactions', (req, res) => {
     transactions.push(newTransaction);
     writeJsonFile(transactionsFilePath, transactions);
 
-    res.status(201).json({
-        message: 'Транзакция успешно добавлена',
-        transaction: newTransaction,
-    });
+    res.status(201).json(newTransaction);
 });
 
-// Маршрут для получения всех транзакций пользователя
-app.get('/api/transactions/:userId', (req, res) => {
-    const { userId } = req.params;
+// PUT-метод для обновления транзакции
+app.put('/api/transactions/:id', authenticateToken, (req, res) => {
+    const { id } = req.params;
+    const { category_id, type, amount, transaction_date, comment } = req.body;
     const transactions = readJsonFile(transactionsFilePath);
 
-    const userTransactions = transactions.filter((t) => t.user_id === parseInt(userId, 10));
-    res.json(userTransactions);
+    const index = transactions.findIndex(t =>
+        t.id === parseInt(id, 10) && t.user_id === req.user.id);
+
+    if (index === -1) {
+        return res.status(404).json({ message: 'Транзакция не найдена' });
+    }
+
+    // Проверяем сумму, если она указана
+    let amountValue = transactions[index].amount;
+    if (amount !== undefined) {
+        amountValue = Math.abs(parseFloat(amount));
+        if (amountValue <= 0 || isNaN(amountValue)) {
+            return res.status(400).json({ message: 'Сумма должна быть числом больше нуля' });
+        }
+        amountValue = amountValue.toFixed(2);
+    }
+
+    // Обновляем транзакцию
+    transactions[index] = {
+        ...transactions[index],
+        category_id: category_id ? parseInt(category_id, 10) : transactions[index].category_id,
+        type: type || transactions[index].type,
+        amount: amountValue,
+        transaction_date: transaction_date || transactions[index].transaction_date,
+        comment: comment !== undefined ? comment : transactions[index].comment,
+        updated_at: new Date().toISOString()
+    };
+
+    writeJsonFile(transactionsFilePath, transactions);
+    res.json(transactions[index]);
+});
+
+// Удаление транзакции
+app.delete('/api/transactions/:id', authenticateToken, (req, res) => {
+    const { id } = req.params;
+    const transactions = readJsonFile(transactionsFilePath);
+
+    const index = transactions.findIndex(t =>
+        t.id === parseInt(id, 10) && t.user_id === req.user.id);
+
+    if (index === -1) {
+        return res.status(404).json({ message: 'Транзакция не найдена' });
+    }
+
+    transactions.splice(index, 1);
+    writeJsonFile(transactionsFilePath, transactions);
+    res.json({ message: 'Транзакция успешно удалена', id: parseInt(id, 10) });
 });
 
 

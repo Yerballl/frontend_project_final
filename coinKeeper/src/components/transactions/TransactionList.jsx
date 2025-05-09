@@ -1,6 +1,5 @@
-// src/components/transactions/TransactionList.jsx
 import React from 'react';
-import TransactionItem from './TransactionItem'; // Убедитесь, что путь правильный
+import TransactionItem from './TransactionItem';
 
 const TransactionList = ({ transactions, isLoading, error }) => {
   const styles = {
