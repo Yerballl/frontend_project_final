@@ -3,7 +3,8 @@ import {
   loginUser as apiLogin,
   registerUser as apiRegister,
   fetchUserProfile,
-  logoutUser as apiLogout
+  logoutUser as apiLogout,
+  setAuthToken
 } from '../../services/api';
 
 // Удаляем все mock-функции API (apiLogin, apiRegister, apiFetchProfile, apiLogout),
@@ -51,6 +52,10 @@ export const checkAuthAndFetchProfile = createAsyncThunk(
         if (!token) {
           return rejectWithValue('Нет токена для аутентификации');
         }
+
+        // Убедимся, что токен установлен перед запросом
+        setAuthToken(token);
+
         const userProfile = await fetchUserProfile();
         return { user: userProfile, token };
       } catch (error) {
