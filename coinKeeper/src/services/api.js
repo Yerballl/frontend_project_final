@@ -114,3 +114,69 @@ export const deleteCategory = async (categoryId) => {
         throw error;
     }
 };
+
+/* Функции API для транзакций */
+export const fetchTransactions = async (filters = {}) => {
+    try {
+        // Построение query параметров из фильтров
+        const queryParams = new URLSearchParams();
+        if (filters.limit) queryParams.append('limit', filters.limit);
+        if (filters.offset) queryParams.append('offset', filters.offset);
+        if (filters.startDate) queryParams.append('startDate', filters.startDate);
+        if (filters.endDate) queryParams.append('endDate', filters.endDate);
+        if (filters.type) queryParams.append('type', filters.type);
+        if (filters.categoryId) queryParams.append('categoryId', filters.categoryId);
+
+        const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+        const response = await apiClient.get(`/transactions${query}`);
+        return response.data;
+    } catch (error) {
+        console.error("Fetch transactions API error:", error.response || error.message);
+        throw error;
+    }
+};
+
+export const addTransaction = async (transactionData) => {
+    try {
+        const formattedData = {
+            category_id: transactionData.categoryId,
+            type: transactionData.type,
+            amount: transactionData.amount,
+            transaction_date: transactionData.date,
+            comment: transactionData.comment
+        };
+
+        const response = await apiClient.post('/transactions', formattedData);
+        return response.data;
+    } catch (error) {
+        console.error("Add transaction API error:", error.response || error.message);
+        throw error;
+    }
+};
+
+export const updateTransaction = async (transactionId, transactionData) => {
+    try {
+        const formattedData = {};
+        if (transactionData.categoryId !== undefined) formattedData.category_id = transactionData.categoryId;
+        if (transactionData.type !== undefined) formattedData.type = transactionData.type;
+        if (transactionData.amount !== undefined) formattedData.amount = transactionData.amount;
+        if (transactionData.date !== undefined) formattedData.transaction_date = transactionData.date;
+        if (transactionData.comment !== undefined) formattedData.comment = transactionData.comment;
+
+        const response = await apiClient.put(`/transactions/${transactionId}`, formattedData);
+        return response.data;
+    } catch (error) {
+        console.error("Update transaction API error:", error.response || error.message);
+        throw error;
+    }
+};
+
+export const deleteTransaction = async (transactionId) => {
+    try {
+        const response = await apiClient.delete(`/transactions/${transactionId}`);
+        return response.data;
+    } catch (error) {
+        console.error("Delete transaction API error:", error.response || error.message);
+        throw error;
+    }
+};
