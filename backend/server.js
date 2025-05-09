@@ -13,7 +13,6 @@ app.use(cors());
 
 app.use(bodyParser.json());
 
-// Пути к JSON-файлам
 const usersFilePath = path.join(__dirname, 'users.json');
 const transactionsFilePath = path.join(__dirname, 'transactions.json');
 const categoriesFilePath = path.join(__dirname, 'categories.json');
