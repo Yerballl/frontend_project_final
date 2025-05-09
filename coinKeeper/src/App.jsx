@@ -7,10 +7,7 @@ import DashboardPage from './pages/DashboardPage';
 import StatsPage from './pages/StatsPage';
 import SettingsPage from './pages/SettingsPage';
 import NotFoundPage from './pages/NotFoundPage';
-
-// Импорт для аутентификации
 import { logoutUser, selectIsAuthenticated, checkAuthAndFetchProfile } from './redux/slices/authSlice';
-import './App.css'; // Общие стили для App
 
 // Используем единый компонент ProtectedRoute
 function ProtectedRoute({ children }) {
