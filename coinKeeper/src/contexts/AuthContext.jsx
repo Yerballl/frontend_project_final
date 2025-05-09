@@ -25,7 +25,12 @@ export const AuthProvider = ({ children }) => {
     const login = async (email, password) => {
         try {
             const resultAction = await dispatch(loginUser({ email, password }));
-            return !resultAction.error;
+            if (!resultAction.error) {
+                // Даем немного времени на установку токена
+                setTimeout(() => dispatch(checkAuthAndFetchProfile()), 100);
+                return true;
+            }
+            return false;
         } catch (error) {
             console.error('Login failed:', error);
             return false;
