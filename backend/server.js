@@ -16,6 +16,7 @@ app.use(bodyParser.json());
 // Пути к JSON-файлам
 const usersFilePath = path.join(__dirname, 'users.json');
 const transactionsFilePath = path.join(__dirname, 'transactions.json');
+const categoriesFilePath = path.join(__dirname, 'categories.json');
 
 // Секретный ключ для JWT. В реальном приложении его лучше хранить в переменных окружения.
 const JWT_SECRET = 'nantkhun'; // <--- Замените на ваш секретный ключ
@@ -183,6 +184,78 @@ app.post('/api/users/register', (req, res) => {
         },
         token
     });
+});
+
+// Получение всех категорий пользователя
+app.get('/api/categories', authenticateToken, (req, res) => {
+    const categories = readJsonFile(categoriesFilePath);
+    // Фильтруем категории по user_id
+    const userCategories = categories.filter(cat => cat.user_id === req.user.id);
+    res.json(userCategories);
+});
+
+// Добавление новой категории
+app.post('/api/categories', authenticateToken, (req, res) => {
+    const { name, icon, color } = req.body;
+    const categories = readJsonFile(categoriesFilePath);
+
+    const newCategory = {
+        id: categories.length ? Math.max(...categories.map(c => c.id)) + 1 : 1, // Генерация ID
+        name,
+        icon,
+        color,
+        user_id: req.user.id, // Привязываем категорию к пользователю
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+    };
+
+    categories.push(newCategory);
+    writeJsonFile(categoriesFilePath, categories);
+    res.status(201).json(newCategory);
+});
+
+// Обновление категории
+app.put('/api/categories/:id', authenticateToken, (req, res) => {
+    const { id } = req.params;
+    const { name, icon, color } = req.body;
+    const categories = readJsonFile(categoriesFilePath);
+
+    const index = categories.findIndex(c => c.id === parseInt(id) && c.user_id === req.user.id);
+
+    if (index === -1) {
+        return res.status(404).json({ message: 'Категория не найдена или не принадлежит пользователю' });
+    }
+
+    // Обновляем категорию
+    categories[index] = {
+        ...categories[index],
+        name: name || categories[index].name,
+        icon: icon || categories[index].icon,
+        color: color || categories[index].color,
+        updated_at: new Date().toISOString()
+    };
+
+    writeJsonFile(categoriesFilePath, categories);
+    res.json(categories[index]);
+});
+
+// Удаление категории
+app.delete('/api/categories/:id', authenticateToken, (req, res) => {
+    const { id } = req.params;
+    const categories = readJsonFile(categoriesFilePath);
+
+    const index = categories.findIndex(c => c.id === parseInt(id) && c.user_id === req.user.id);
+
+    if (index === -1) {
+        return res.status(404).json({ message: 'Категория не найдена или не принадлежит пользователю' });
+    }
+
+    // Удаляем категорию
+    const deletedCategory = categories[index];
+    categories.splice(index, 1);
+
+    writeJsonFile(categoriesFilePath, categories);
+    res.json({ message: 'Категория успешно удалена', id: parseInt(id) });
 });
 
 // Запуск сервера
