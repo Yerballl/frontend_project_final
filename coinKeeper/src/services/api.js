@@ -1,12 +1,16 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8080/api/users';
-
 // Настраиваем apiClient с базовым URL
 export const apiClient = axios.create({
     baseURL: 'http://localhost:8080/api',
     headers: { 'Content-Type': 'application/json' }
 });
+
+// Инициализация токена при загрузке приложения
+const token = localStorage.getItem('authToken');
+if (token) {
+    apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+}
 
 // Функция для установки токена авторизации
 export const setAuthToken = (token) => {
