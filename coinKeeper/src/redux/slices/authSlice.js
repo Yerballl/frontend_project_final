@@ -1,107 +1,68 @@
-// src/store/slices/authSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import {
+  loginUser as apiLogin,
+  registerUser as apiRegister,
+  fetchUserProfile,
+  logoutUser as apiLogout,
+  setAuthToken
+} from '../../services/api';
 
-// ЗАМЕНИТЕ ЭТО НА ВАШИ РЕАЛЬНЫЕ API СЕРВИСЫ
-// import { apiLogin, apiRegister, apiFetchProfile, apiLogout } from '../../services/authService';
-
-// --- Mock API Service Functions (ЗАМЕНИТЕ ИХ!) ---
-const FAKE_DELAY = 500;
-const apiLogin = async (credentials) => {
-  console.log('API Call: loginUser', credentials);
-  await new Promise(resolve => setTimeout(resolve, FAKE_DELAY));
-  if (credentials.email === 'test@example.com' && credentials.password === 'password') {
-    const token = 'fake-jwt-token-' + Date.now();
-    const user = { id: 'user1', email: credentials.email, name: 'Тестовый Пользователь' };
-    localStorage.setItem('authToken', token); // Сохраняем токен
-    return { user, token };
-  } else {
-    throw { response: { data: { message: 'Неверный email или пароль' } } };
-  }
-};
-const apiRegister = async (userData) => {
-  console.log('API Call: registerUser', userData);
-  await new Promise(resolve => setTimeout(resolve, FAKE_DELAY));
-  if (userData.email && userData.password) {
-    const token = 'fake-jwt-token-' + Date.now();
-    const user = { id: 'user' + Date.now(), email: userData.email, name: userData.name || 'Новый Пользователь' };
-    localStorage.setItem('authToken', token);
-    return { user, token };
-  } else {
-    throw { response: { data: { message: 'Ошибка регистрации' } } };
-  }
-};
-const apiFetchProfile = async (token) => { // Обычно токен передается в заголовках
-  console.log('API Call: fetchProfile with token', token);
-  await new Promise(resolve => setTimeout(resolve, FAKE_DELAY));
-  if (token && token.startsWith('fake-jwt-token')) {
-    return { id: 'user1', email: 'test@example.com', name: 'Тестовый Пользователь (профиль)' };
-  } else {
-    throw { response: { data: { message: 'Невалидный токен или сессия истекла' } } };
-  }
-};
-const apiLogout = async () => { // На бэкенде может быть инвалидация токена
-    console.log('API Call: logoutUser');
-    await new Promise(resolve => setTimeout(resolve, FAKE_DELAY));
-    localStorage.removeItem('authToken'); // Удаляем токен
-    return { message: 'Вы успешно вышли' };
-};
-// --- Конец Mock API ---
-
+// Удаляем все mock-функции API (apiLogin, apiRegister, apiFetchProfile, apiLogout),
+// так как теперь используем реальные функции из api.js
 
 export const loginUser = createAsyncThunk(
-  'auth/login',
-  async (credentials, { rejectWithValue }) => {
-    try {
-      const data = await apiLogin(credentials);
-      return data; // Ожидаем { user: {...}, token: '...' }
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Ошибка входа');
+    'auth/login',
+    async (credentials, { rejectWithValue }) => {
+      try {
+        return await apiLogin(credentials);
+      } catch (error) {
+        return rejectWithValue(error.response?.data?.message || 'Ошибка входа');
+      }
     }
-  }
 );
 
 export const registerUser = createAsyncThunk(
-  'auth/register',
-  async (userData, { rejectWithValue }) => {
-    try {
-      const data = await apiRegister(userData);
-      return data; // Ожидаем { user: {...}, token: '...' }
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Ошибка регистрации');
+    'auth/register',
+    async (userData, { rejectWithValue }) => {
+      try {
+        return await apiRegister(userData);
+      } catch (error) {
+        return rejectWithValue(error.response?.data?.message || 'Ошибка регистрации');
+      }
     }
-  }
 );
 
 export const logoutUser = createAsyncThunk(
-  'auth/logout',
-  async (_, { rejectWithValue }) => {
-    try {
-      await apiLogout(); // На бэкенде может быть инвалидация токена
-      return;
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Ошибка выхода');
+    'auth/logout',
+    async (_, { rejectWithValue }) => {
+      try {
+        await apiLogout();
+        return;
+      } catch (error) {
+        return rejectWithValue(error.response?.data?.message || 'Ошибка выхода');
+      }
     }
-  }
 );
 
-// Thunk для проверки существующего токена и загрузки профиля пользователя
 export const checkAuthAndFetchProfile = createAsyncThunk(
-  'auth/checkAuthAndFetchProfile',
-  async (_, { getState, rejectWithValue }) => {
-    const token = getState().auth.token; // Получаем токен из состояния (или напрямую из localStorage)
-    if (!token) {
-      return rejectWithValue('Нет токена для аутентификации');
-    }
-    try {
-      const userProfile = await apiFetchProfile(token); // API должен вернуть данные пользователя
-      return { user: userProfile, token }; // Возвращаем пользователя и существующий токен
-    } catch (error) {
-      localStorage.removeItem('authToken'); // Если токен невалиден, удаляем его
-      return rejectWithValue(error.response?.data?.message || 'Сессия истекла или невалидна');
-    }
-  }
-);
+    'auth/checkAuthAndFetchProfile',
+    async (_, { rejectWithValue }) => {
+      try {
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+          return rejectWithValue('Нет токена для аутентификации');
+        }
 
+        // Убедимся, что токен установлен перед запросом
+        setAuthToken(token);
+
+        const userProfile = await fetchUserProfile();
+        return { user: userProfile, token };
+      } catch (error) {
+        return rejectWithValue(error.response?.data?.message || 'Сессия истекла или невалидна');
+      }
+    }
+);
 
 const initialState = {
   user: null,

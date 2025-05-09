@@ -30,5 +30,13 @@
     "name": "User Three",
     "created_at": "2025-05-03T12:00:00Z",
     "updated_at": "2025-05-07T17:00:00Z"
+  },
+  {
+    "id": 5,
+    "name": "Googol",
+    "email": "jalgasarnat@mail.ru",
+    "password": "123",
+    "created_at": "2025-05-09T06:58:12.287Z",
+    "updated_at": "2025-05-09T06:58:12.287Z"
   }
 ]
