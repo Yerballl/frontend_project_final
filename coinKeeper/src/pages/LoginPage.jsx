@@ -156,36 +156,6 @@ function LoginPage() {
                         </div>
                     </form>
 
-                    <div className="relative mt-12 mb-6">
-                        <div className="absolute inset-0 flex items-center">
-                            <div className="w-full border-t border-gray-200"></div>
-                        </div>
-                        <div className="relative flex justify-center text-sm">
-                            <span className="px-4 bg-white text-gray-500">или продолжить с</span>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-3">
-                        <button className="flex justify-center items-center py-2.5 border border-gray-300 rounded-xl hover:bg-gray-50 transition">
-                            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none">
-                                <path d="M12 2C6.477 2 2 6.477 2 12C2 16.991 5.657 21.128 10.438 21.879V14.89H7.898V12H10.438V9.797C10.438 7.291 11.93 5.907 14.215 5.907C15.309 5.907 16.453 6.102 16.453 6.102V8.562H15.193C13.95 8.562 13.563 9.333 13.563 10.124V12H16.336L15.893 14.89H13.563V21.879C18.343 21.129 22 16.99 22 12C22 6.477 17.523 2 12 2Z" fill="#1877F2"/>
-                            </svg>
-                        </button>
-                        <button className="flex justify-center items-center py-2.5 border border-gray-300 rounded-xl hover:bg-gray-50 transition">
-                            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none">
-                                <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 5C13.66 5 15 6.34 15 8C15 9.66 13.66 11 12 11C10.34 11 9 9.66 9 8C9 6.34 10.34 5 12 5ZM18 16.58C18 19.07 15.07 21 12 21C8.93 21 6 19.07 6 16.58C6 14.09 8.93 12 12 12C15.07 12 18 14.09 18 16.58Z" fill="#EA4335"/>
-                            </svg>
-                        </button>
-                        <button className="flex justify-center items-center py-2.5 border border-gray-300 rounded-xl hover:bg-gray-50 transition">
-                            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none">
-                                <path d="M21.5884 12.2363C21.5884 11.5117 21.5259 10.8159 21.4009 10.1514H12.2373V14.0774H17.4989C17.2864 15.2052 16.6489 16.1607 15.6788 16.7995V19.4204H18.9196C20.7587 17.7241 21.5884 15.2114 21.5884 12.2363Z" fill="#4285F4"/>
-                                <path d="M12.2371 21.8741C14.9496 21.8741 17.2348 20.9199 18.9193 19.4202L15.6786 16.7994C14.828 17.384 13.6995 17.7365 12.2371 17.7365C9.65044 17.7365 7.46847 16.0089 6.75413 13.6748H3.41138V16.3766C5.08859 19.6335 8.39759 21.8741 12.2371 21.8741Z" fill="#34A853"/>
-                                <path d="M6.75432 13.675C6.5731 13.0354 6.47244 12.3587 6.47244 11.6622C6.47244 10.9656 6.5731 10.2889 6.75432 9.6494V6.94751H3.41157C2.71651 8.36079 2.3241 10.0594 2.3241 11.6622C2.3241 13.2649 2.71651 14.9635 3.41157 16.3768L6.75432 13.675Z" fill="#FBBC05"/>
-                                <path d="M12.2371 5.58783C13.7454 5.58783 15.0905 6.10474 16.1446 7.10473L19.0334 4.21595C17.2318 2.52345 14.9466 1.45044 12.2371 1.45044C8.39759 1.45044 5.08859 3.69097 3.41138 6.94789L6.75413 9.64978C7.46847 7.31568 9.65044 5.58783 12.2371 5.58783Z" fill="#EA4335"/>
-                            </svg>
-                        </button>
-                    </div>
-
                     <div className="mt-6 text-center">
                         <p className="text-sm text-gray-600">
                             Нет аккаунта?{' '}
