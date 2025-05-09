@@ -4,6 +4,9 @@ import { Link } from 'react-router-dom';
 
 import BalanceDisplay from '../components/dashboard/BalanceDisplay';
 import TransactionList from '../components/transactions/TransactionList';
+import CategoryList from '../components/categories/CategoryList';
+import CategoryModal from '../components/categories/CategoryModal';
+import TransactionModal from '../components/transactions/TransactionModal';
 
 import {
   fetchUserBalance,
@@ -21,10 +24,7 @@ import {
   selectCategoriesLoading,
   selectCategoriesError
 } from '../redux/slices/categoriesSlice';
-import CategoryList from '../components/categories/CategoryList';
-import CategoryModal from '../components/categories/CategoryModal';
 
-import TransactionModal from '../components/transactions/TransactionModal';
 import {
   addTransaction,
   updateTransaction,
