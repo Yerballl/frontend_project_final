@@ -6,7 +6,6 @@ import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
 import StatsPage from './pages/StatsPage';
 import SettingsPage from './pages/SettingsPage';
-import TransactionFormPage from './pages/TransactionFormPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 // Импорт для аутентификации
@@ -43,16 +42,11 @@ function App() {
         <>
             <main className="app-main">
                 <Routes>
-                    {/* Публичные маршруты */}
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/register" element={<RegisterPage />} />
-
-                    {/* Защищенные маршруты */}
                     <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
                     <Route path="/stats" element={<ProtectedRoute><StatsPage /></ProtectedRoute>} />
                     <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-                    <Route path="/transactions/new" element={<ProtectedRoute><TransactionFormPage /></ProtectedRoute>} />
-                    <Route path="/transactions/edit/:id" element={<ProtectedRoute><TransactionFormPage /></ProtectedRoute>} />
                     <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
 
                     {/* Страница не найдена */}
