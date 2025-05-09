@@ -24,7 +24,10 @@ import {
 import CategoryList from '../components/categories/CategoryList';
 import CategoryModal from '../components/categories/CategoryModal';
 
+import TransactionModal from '../components/transactions/TransactionModal';
 import {
+  addTransaction,
+  updateTransaction,
   fetchRecentTransactions,
   selectRecentTransactions,
   selectRecentTransactionsLoading,
@@ -41,6 +44,8 @@ const DashboardPage = () => {
   const recentTransactions = useSelector(selectRecentTransactions);
   const transactionsLoading = useSelector(selectRecentTransactionsLoading);
   const transactionsError = useSelector(selectTransactionsError);
+  const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
+  const [currentTransaction, setCurrentTransaction] = useState(null);
 
   // Добавим состояние для работы с модальным окном категорий
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -56,6 +61,24 @@ const DashboardPage = () => {
     dispatch(fetchUserBalance());
     dispatch(fetchRecentTransactions({ limit: 5 }));
   }, [dispatch]);
+
+  const handleAddTransaction = () => {
+    setCurrentTransaction(null);
+    setIsTransactionModalOpen(true);
+  };
+
+  const handleEditTransaction = (transaction) => {
+    setCurrentTransaction(transaction);
+    setIsTransactionModalOpen(true);
+  };
+
+  const handleSaveTransaction = (transactionData) => {
+    if (transactionData.id) {
+      dispatch(updateTransaction(transactionData));
+    } else {
+      dispatch(addTransaction(transactionData));
+    }
+  };
 
   const handleAddCategory = () => {
     setCurrentCategory(null);
@@ -97,12 +120,12 @@ const DashboardPage = () => {
           </div>
 
           <div className="text-center mb-10">
-            <Link
-                to="/transactions/new"
+            <button
+                onClick={handleAddTransaction}
                 className="inline-block bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-3 px-8 rounded-lg text-lg shadow-md hover:shadow-lg transition duration-300 transform hover:-translate-y-0.5"
             >
               Добавить транзакцию
-            </Link>
+            </button>
           </div>
 
           <section className="bg-white shadow-2xl rounded-xl p-6 sm:p-8">
@@ -113,28 +136,26 @@ const DashboardPage = () => {
                 transactions={recentTransactions}
                 isLoading={transactionsLoading}
                 error={transactionsError}
+                onEdit={handleEditTransaction}
             />
           </section>
 
           <section className="bg-white shadow-2xl rounded-xl p-6 sm:p-8 mt-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-gray-800">Категории</h2>
+            <div className="flex justify-between items-center mb-6 pb-3 border-b-2 border-gray-200">
+              <h2 className="text-2xl sm:text-3xl font-semibold text-gray-800">Категории</h2>
               <button
                   onClick={handleAddCategory}
-                  className="flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-800 transition"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg shadow-md hover:shadow-lg transition"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
-                </svg>
-                Добавить
+                Добавить категорию
               </button>
             </div>
             <CategoryList
                 categories={categories}
-                onEdit={handleEditCategory}
-                onDelete={handleDeleteCategory}
                 isLoading={categoriesLoading}
                 error={categoriesError}
+                onEdit={handleEditCategory}
+                onDelete={handleDeleteCategory}
             />
           </section>
 
@@ -143,6 +164,13 @@ const DashboardPage = () => {
               onClose={() => setIsModalOpen(false)}
               onSave={handleSaveCategory}
               category={currentCategory}
+          />
+
+          <TransactionModal
+              isOpen={isTransactionModalOpen}
+              onClose={() => setIsTransactionModalOpen(false)}
+              onSave={handleSaveTransaction}
+              transaction={currentTransaction}
           />
         </div>
       </div>
