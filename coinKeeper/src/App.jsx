@@ -42,11 +42,8 @@ function App() {
         <>
             <main className="app-main">
                 <Routes>
-                    {/* Публичные маршруты */}
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/register" element={<RegisterPage />} />
-
-                    {/* Защищенные маршруты */}
                     <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
                     <Route path="/stats" element={<ProtectedRoute><StatsPage /></ProtectedRoute>} />
                     <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
