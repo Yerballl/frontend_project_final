@@ -289,7 +289,37 @@ app.post('/api/users/register', (req, res) => {
 
 
 /* CATEGORIES */
-// Получение всех категорий пользователя
+// Получение всех категорий пользователя с рассчитанными балансами
+app.get('/api/categories/summary', authenticateToken, (req, res) => {
+    const allCategories = readJsonFile(categoriesFilePath);
+    const allTransactions = readJsonFile(transactionsFilePath);
+
+    // Фильтруем категории по user_id
+    const userCategories = allCategories.filter(cat => cat.user_id === req.user.id);
+    // Фильтруем транзакции по user_id
+    const userTransactions = allTransactions.filter(t => t.user_id === req.user.id);
+
+    const categoriesWithSummary = userCategories.map(category => {
+        let categoryBalance = 0;
+        userTransactions.forEach(transaction => {
+            if (transaction.category_id === category.id) {
+                if (transaction.type === 'income') {
+                    categoryBalance += parseFloat(transaction.amount);
+                } else if (transaction.type === 'expense') {
+                    categoryBalance -= parseFloat(transaction.amount);
+                }
+            }
+        });
+        return {
+            ...category,
+            balance: categoryBalance.toFixed(2) // Добавляем баланс к объекту категории
+        };
+    });
+
+    res.json(categoriesWithSummary);
+});
+
+// Получение всех категорий пользователя (базовый, без сумм)
 app.get('/api/categories', authenticateToken, (req, res) => {
     const categories = readJsonFile(categoriesFilePath);
     // Фильтруем категории по user_id
@@ -354,7 +384,7 @@ app.delete('/api/categories/:id', authenticateToken, (req, res) => {
     }
 
     // Удаляем категорию
-    const deletedCategory = categories[index];
+    // const deletedCategory = categories[index]; // Если нужно вернуть удаленную категорию
     categories.splice(index, 1);
 
     writeJsonFile(categoriesFilePath, categories);
@@ -363,7 +393,7 @@ app.delete('/api/categories/:id', authenticateToken, (req, res) => {
 
 
 /* BALANCE */
-// Получение баланса пользователя
+// Получение общего баланса пользователя
 app.get('/api/balance', authenticateToken, (req, res) => {
     const transactions = readJsonFile(transactionsFilePath);
 
