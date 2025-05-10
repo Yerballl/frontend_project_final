@@ -1,10 +1,8 @@
 import React from 'react';
 
-// Утилита для форматирования валюты
 const formatCurrency = (amountStr) => {
     const amount = parseFloat(amountStr);
     if (isNaN(amount)) {
-        // Если баланс еще не загружен или некорректен, можно вернуть прочерк или 0
         return '0.00 ₽';
     }
     return `${amount.toFixed(2)} ₽`;
