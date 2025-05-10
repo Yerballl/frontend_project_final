@@ -1,0 +1,22 @@
+[
+  {
+    "id": 1,
+    "user_id": 4,
+    "name": "Kaspi.kz",
+    "icon": "💳",
+    "color": "#F44336",
+    "initial_balance": 54385,
+    "created_at": "2025-05-10T20:48:23.730Z",
+    "updated_at": "2025-05-10T20:48:23.730Z"
+  },
+  {
+    "id": 2,
+    "user_id": 4,
+    "name": "Halyk bank",
+    "icon": "💳",
+    "color": "#4CAF50",
+    "initial_balance": 0,
+    "created_at": "2025-05-10T20:48:30.013Z",
+    "updated_at": "2025-05-10T20:48:30.013Z"
+  }
+]
