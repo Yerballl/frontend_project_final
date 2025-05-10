@@ -1,178 +1,218 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { selectAllCategories } from "../../redux/slices/categoriesSlice";
+import { selectAllAccounts } from "../../redux/slices/accountsSlice"; // Import accounts selector
 
-const TransactionModal = ({ isOpen, onClose, onSave, transaction = null }) => {
+const TransactionModal = ({ isOpen, onClose, onSave, transaction = null, prefillType = null }) => {
     const categories = useSelector(selectAllCategories);
+    const accounts = useSelector(selectAllAccounts); // Get accounts from Redux state
 
-    const [type, setType] = useState('expense');
+    const [type, setType] = useState(prefillType || 'expense');
     const [amount, setAmount] = useState('');
+    const [accountId, setAccountId] = useState(''); // New state for account ID
     const [categoryId, setCategoryId] = useState('');
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [comment, setComment] = useState('');
     const [error, setError] = useState('');
 
     useEffect(() => {
-        if (transaction) {
-            setType(transaction.type);
-            setAmount(transaction.amount < 0 ? Math.abs(transaction.amount) : transaction.amount);
-            setCategoryId(transaction.categoryId);
-            setDate(transaction.date);
-            setComment(transaction.comment || '');
-        } else {
-            setType('expense');
-            setAmount('');
-            setCategoryId('');
-            setDate(new Date().toISOString().split('T')[0]);
-            setComment('');
+        if (isOpen) { // Reset form when modal opens
+            if (transaction) {
+                setType(transaction.type);
+                // Amount is stored positive in backend, modal expects positive for input
+                setAmount(String(Math.abs(parseFloat(transaction.amount))));
+                setAccountId(String(transaction.accountId || (accounts.length > 0 ? accounts[0].id : '')));
+                setCategoryId(String(transaction.categoryId));
+                // Ensure date is correctly formatted from transaction object
+                setDate(transaction.date ? transaction.date.split('T')[0] : new Date().toISOString().split('T')[0]);
+                setComment(transaction.comment || '');
+            } else {
+                setType(prefillType || 'expense');
+                setAmount('');
+                // Set default account if available, otherwise empty
+                setAccountId(accounts.length > 0 ? String(accounts[0].id) : '');
+                setCategoryId('');
+                setDate(new Date().toISOString().split('T')[0]);
+                setComment('');
+            }
+            setError('');
         }
-        setError('');
-    }, [transaction, isOpen]);
+    }, [transaction, isOpen, accounts, prefillType]);
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        setError('');
 
-        if (!amount || !categoryId || !date) {
-            setError('Пожалуйста, заполните все обязательные поля: Сумма, Категория, Дата.');
+        if (!amount || !categoryId || !date || !accountId) { // Added accountId check
+            setError('Пожалуйста, заполните все обязательные поля: Счет, Сумма, Категория, Дата.');
+            return;
+        }
+        if (parseFloat(amount) <= 0) {
+            setError('Сумма должна быть больше нуля.');
             return;
         }
 
+
         const transactionData = {
             ...(transaction && { id: transaction.id }),
+            accountId: parseInt(accountId), // Pass accountId
             type,
-            amount: type === 'expense' ? -parseFloat(amount) : parseFloat(amount),
-            categoryId,
+            // Amount will be handled by API to be stored as positive, type indicates flow
+            // For frontend representation in lists, we might use negative for expense
+            amount: parseFloat(amount),
+            categoryId: parseInt(categoryId),
             date,
             comment,
         };
 
         onSave(transactionData);
-        onClose();
+        // onClose(); // Let parent component handle closing after save
     };
 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex justify-center items-center p-4">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6">
-                <div className="bg-white">
-                    <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-                        {transaction ? 'Редактировать транзакцию' : 'Добавить транзакцию'}
-                    </h3>
-                        {error && (
-                            <div className="mb-4 bg-red-50 border-l-4 border-red-500 p-4 rounded-r-md">
-                                <p className="text-red-700 text-sm">{error}</p>
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex justify-center items-center p-4 overflow-y-auto">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 my-8">
+                <h3 className="text-xl font-semibold text-gray-900 mb-6 text-center">
+                    {transaction ? 'Редактировать транзакцию' : (prefillType === 'income' ? 'Добавить доход' : 'Добавить расход')}
+                </h3>
+                {error && (
+                    <div className="mb-4 bg-red-100 border-l-4 border-red-500 text-red-700 p-3 rounded-md">
+                        <p className="text-sm">{error}</p>
+                    </div>
+                )}
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    {/* Account Selector */}
+                    <div>
+                        <label htmlFor="accountId" className="block text-sm font-medium text-gray-700 mb-1">Счет</label>
+                        <select
+                            id="accountId"
+                            value={accountId}
+                            onChange={(e) => setAccountId(e.target.value)}
+                            required
+                            className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        >
+                            <option value="">Выберите счет</option>
+                            {accounts.map(acc => (
+                                <option key={acc.id} value={acc.id}>
+                                    {acc.icon} {acc.name} ({parseFloat(acc.balance).toLocaleString('ru-RU')} ₽)
+                                </option>
+                            ))}
+                        </select>
+                        {accounts.length === 0 && <p className="text-xs text-gray-500 mt-1">Сначала добавьте счет в разделе "Счета".</p>}
+                    </div>
+
+                    {/* Type and Amount */}
+                    <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-4 sm:space-y-0">
+                        {!prefillType && ( // Only show type selector if not prefilled (e.g. general add transaction)
+                            <div className="w-full sm:w-1/2">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Тип</label>
+                                <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+                                    <button
+                                        type="button"
+                                        onClick={() => setType('expense')}
+                                        className={`flex-1 py-2.5 px-4 text-center text-sm transition-colors ${type === 'expense' ? 'bg-red-500 text-white font-medium' : 'bg-white text-gray-600 hover:bg-red-50'}`}
+                                    >
+                                        Расход
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setType('income')}
+                                        className={`flex-1 py-2.5 px-4 text-center text-sm transition-colors ${type === 'income' ? 'bg-green-500 text-white font-medium' : 'bg-white text-gray-600 hover:bg-green-50'}`}
+                                    >
+                                        Доход
+                                    </button>
+                                </div>
                             </div>
                         )}
-
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-4 sm:space-y-0">
-                                <div className="w-full sm:w-1/2">
-                                    <label className="flex items-center text-sm font-medium text-gray-700 mb-1 pl-1">
-                                        Тип транзакции
-                                    </label>
-                                    <div className="flex rounded-xl border border-gray-300 overflow-hidden">
-                                        <button
-                                            type="button"
-                                            onClick={() => setType('expense')}
-                                            className={`flex-1 py-3 px-4 text-center ${type === 'expense' ? 'bg-red-100 text-red-700 font-medium' : 'bg-white text-gray-500'}`}
-                                        >
-                                            Расход
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setType('income')}
-                                            className={`flex-1 py-3 px-4 text-center ${type === 'income' ? 'bg-green-100 text-green-700 font-medium' : 'bg-white text-gray-500'}`}
-                                        >
-                                            Доход
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div className="w-full sm:w-1/2">
-                                    <label className="flex items-center text-sm font-medium text-gray-700 mb-1 pl-1">
-                                        Сумма
-                                    </label>
-                                    <div className="relative">
-                                        <input
-                                            type="number"
-                                            value={amount}
-                                            onChange={(e) => setAmount(e.target.value)}
-                                            required
-                                            className="w-full pl-4 pr-10 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                                            placeholder="0.00"
-                                        />
-                                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                            <span className="text-gray-400">₽</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="flex items-center text-sm font-medium text-gray-700 mb-1 pl-1">
-                                    Категория
-                                </label>
-                                <select
-                                    value={categoryId}
-                                    onChange={(e) => setCategoryId(e.target.value)}
-                                    required
-                                    className="w-full pl-4 pr-10 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                                >
-                                    <option value="">Выберите категорию</option>
-                                    {categories && categories.map(category => (
-                                        <option key={category.id} value={category.id}>
-                                            {category.icon} {category.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="flex items-center text-sm font-medium text-gray-700 mb-1 pl-1">
-                                    Дата
-                                </label>
+                        <div className={`w-full ${!prefillType ? 'sm:w-1/2' : ''}`}>
+                            <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-1">Сумма</label>
+                            <div className="relative">
                                 <input
-                                    type="date"
-                                    value={date}
-                                    onChange={(e) => setDate(e.target.value)}
+                                    id="amount"
+                                    type="number"
+                                    value={amount}
+                                    onChange={(e) => setAmount(e.target.value)}
                                     required
-                                    className="w-full pl-4 pr-10 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                    step="0.01"
+                                    min="0.01"
+                                    className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 pr-10"
+                                    placeholder="0.00"
                                 />
+                                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                    <span className="text-gray-400">₽</span>
+                                </div>
                             </div>
-
-                            <div>
-                                <label className="flex items-center text-sm font-medium text-gray-700 mb-1 pl-1">
-                                    Комментарий
-                                </label>
-                                <textarea
-                                    value={comment}
-                                    onChange={(e) => setComment(e.target.value)}
-                                    rows="2"
-                                    className="w-full pl-4 pr-10 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                                    placeholder="Описание транзакции (необязательно)"
-                                />
-                            </div>
-
-                            <div className="pt-4 sm:flex sm:flex-row-reverse">
-                                <button
-                                    type="submit"
-                                    className="w-full sm:w-auto sm:ml-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-medium py-2 px-6 rounded-xl shadow-md"
-                                >
-                                    {transaction ? 'Сохранить изменения' : 'Добавить транзакцию'}
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={onClose}
-                                    className="mt-3 sm:mt-0 w-full sm:w-auto bg-white text-gray-700 font-medium py-2 px-6 border border-gray-300 rounded-xl shadow-sm hover:bg-gray-50"
-                                >
-                                    Отмена
-                                </button>
-                            </div>
-                        </form>
+                        </div>
                     </div>
-                </div>
+
+                    {/* Category Selector */}
+                    <div>
+                        <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700 mb-1">Категория</label>
+                        <select
+                            id="categoryId"
+                            value={categoryId}
+                            onChange={(e) => setCategoryId(e.target.value)}
+                            required
+                            className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        >
+                            <option value="">Выберите категорию</option>
+                            {categories.map(category => (
+                                <option key={category.id} value={category.id}>
+                                    {category.icon} {category.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Date */}
+                    <div>
+                        <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">Дата</label>
+                        <input
+                            id="date"
+                            type="date"
+                            value={date}
+                            onChange={(e) => setDate(e.target.value)}
+                            required
+                            className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        />
+                    </div>
+
+                    {/* Comment */}
+                    <div>
+                        <label htmlFor="comment" className="block text-sm font-medium text-gray-700 mb-1">Комментарий</label>
+                        <textarea
+                            id="comment"
+                            value={comment}
+                            onChange={(e) => setComment(e.target.value)}
+                            rows="2"
+                            className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="Описание (необязательно)"
+                        />
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex justify-end space-x-3 pt-4">
+                        <button
+                            type="button"
+                            className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                            onClick={onClose}
+                        >
+                            Отмена
+                        </button>
+                        <button
+                            type="submit"
+                            className="px-5 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1"
+                            disabled={accounts.length === 0 && !transaction} // Disable add if no accounts, but allow edit
+                        >
+                            {transaction ? 'Сохранить' : 'Добавить'}
+                        </button>
+                    </div>
+                </form>
             </div>
+        </div>
     );
 };
 

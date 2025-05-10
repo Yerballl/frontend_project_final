@@ -1,19 +1,21 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
 import { selectAllCategories } from '../../redux/slices/categoriesSlice';
+import { selectAllAccounts } from '../../redux/slices/accountsSlice'; // Import accounts
 
-const TransactionItem = ({ transaction, onEdit, onDelete }) => { // Добавлены props onEdit, onDelete
+const TransactionItem = ({ transaction, onEdit, onDelete }) => {
   const categories = useSelector(selectAllCategories);
+  const accounts = useSelector(selectAllAccounts); // Get accounts
+
   const category = categories.find(cat => cat.id === transaction.category_id);
+  const account = accounts.find(acc => acc.id === transaction.account_id); // Find account
 
   const amount = parseFloat(transaction.amount) || 0;
   const isIncome = transaction.type === 'income';
 
-  // Форматирование даты
   let formattedDate = 'Неверная дата';
   if (transaction.transaction_date) {
     try {
-      // Убедимся, что дата интерпретируется корректно (без учета часового пояса для простоты)
       const datePart = transaction.transaction_date.split('T')[0];
       formattedDate = new Date(datePart + 'T00:00:00').toLocaleDateString('ru-RU', {
         day: '2-digit', month: '2-digit', year: 'numeric'
@@ -24,8 +26,8 @@ const TransactionItem = ({ transaction, onEdit, onDelete }) => { // Добавл
   }
 
   return (
-      <div className={`flex items-center justify-between p-3 mb-2 rounded-lg shadow-sm transition-all hover:shadow-md ${isIncome ? 'bg-green-50' : 'bg-red-50'}`}>
-        <div className="flex items-center">
+      <div className={`flex items-center justify-between p-3 mb-2 rounded-lg shadow-sm transition-all hover:shadow-md ${isIncome ? 'bg-green-50 hover:bg-green-100' : 'bg-red-50 hover:bg-red-100'}`}>
+        <div className="flex items-center overflow-hidden">
           {category && (
               <div
                   className="w-8 h-8 rounded-full flex items-center justify-center text-sm text-white mr-3 flex-shrink-0"
@@ -35,18 +37,23 @@ const TransactionItem = ({ transaction, onEdit, onDelete }) => { // Добавл
                 {category.icon || (isIncome ? '➕' : '➖')}
               </div>
           )}
-          <div>
-            <div className="font-medium text-gray-800">
+          <div className="overflow-hidden">
+            <div className="font-medium text-gray-800 text-sm">
               {category ? category.name : (transaction.category_id || 'Без категории')}
             </div>
-            {transaction.comment && <div className="text-xs text-gray-500 truncate max-w-xs" title={transaction.comment}>{transaction.comment}</div>}
+            {account && ( // Display account name
+                <div className="text-xs text-gray-500">
+                  Счет: {account.icon} {account.name}
+                </div>
+            )}
+            {transaction.comment && <div className="text-xs text-gray-500 truncate max-w-[150px] sm:max-w-xs" title={transaction.comment}>{transaction.comment}</div>}
             <div className="text-xs text-gray-400 mt-0.5">
               {formattedDate}
             </div>
           </div>
         </div>
-        <div className="flex items-center space-x-2">
-          <div className={`font-semibold text-sm ${isIncome ? 'text-green-600' : 'text-red-600'}`}>
+        <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
+          <div className={`font-semibold text-sm ${isIncome ? 'text-green-700' : 'text-red-700'}`}>
             {isIncome ? '+' : '-'}{amount.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₽
           </div>
           <button

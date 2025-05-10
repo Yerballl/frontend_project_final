@@ -14,22 +14,20 @@ function CategoryModal({ isOpen, onClose, onSave, category = null }) {
             setIcon(category.icon || '💰');
             setColor(category.color || '#6366f1');
         } else {
-            // Сброс к значениям по умолчанию для новой категории
             setName('');
             setIcon('💰');
             setColor('#6366f1');
         }
-    }, [category, isOpen]); // Перезагрузка состояния при изменении category или isOpen
+    }, [category, isOpen]);
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        onSave({ // onSave вызовет dispatch и затем закроет модальное окно из DashboardPage
+        onSave({
             ...(category ? { id: category.id } : {}),
             name,
             icon,
             color
         });
-        // onClose(); // Удалено: закрытие теперь управляется из DashboardPage
     };
 
     if (!isOpen) return null;
@@ -92,7 +90,7 @@ function CategoryModal({ isOpen, onClose, onSave, category = null }) {
                         <button
                             type="button"
                             className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300"
-                            onClick={onClose} // Кнопка Отмена по-прежнему использует прямой onClose
+                            onClick={onClose}
                         >
                             Отмена
                         </button>
