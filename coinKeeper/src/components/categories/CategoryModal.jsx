@@ -5,8 +5,8 @@ function CategoryModal({ isOpen, onClose, onSave, category = null }) {
     const [icon, setIcon] = useState('💰');
     const [color, setColor] = useState('#6366f1');
 
-    const icons = ['💰', '🛒', '🍔', '🏠', '🚗', '✈️', '💊', '👕', '📚', '🎮'];
-    const colors = ['#6366f1', '#8b5cf6', '#ec4899', '#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#6b7280', '#000000'];
+    const icons = ['💰', '🛒', '🍔', '🏠', '🚗', '✈️', '💊', '👕', '📚', '🎮', '🎁', '💼', '💡', '💸', '💳'];
+    const colors = ['#6366f1', '#8b5cf6', '#ec4899', '#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#6b7280', '#000000', '#FACC15', '#22C55E', '#0EA5E9'];
 
     useEffect(() => {
         if (category) {
@@ -14,21 +14,22 @@ function CategoryModal({ isOpen, onClose, onSave, category = null }) {
             setIcon(category.icon || '💰');
             setColor(category.color || '#6366f1');
         } else {
+            // Сброс к значениям по умолчанию для новой категории
             setName('');
             setIcon('💰');
             setColor('#6366f1');
         }
-    }, [category, isOpen]);
+    }, [category, isOpen]); // Перезагрузка состояния при изменении category или isOpen
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        onSave({
+        onSave({ // onSave вызовет dispatch и затем закроет модальное окно из DashboardPage
             ...(category ? { id: category.id } : {}),
             name,
             icon,
             color
         });
-        onClose();
+        // onClose(); // Удалено: закрытие теперь управляется из DashboardPage
     };
 
     if (!isOpen) return null;
@@ -36,31 +37,33 @@ function CategoryModal({ isOpen, onClose, onSave, category = null }) {
     return (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex justify-center items-center p-4">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">
+                <h3 className="text-xl font-semibold text-gray-900 mb-6 text-center">
                     {category ? 'Редактировать категорию' : 'Добавить категорию'}
                 </h3>
 
-                <form onSubmit={handleSubmit}>
-                    <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Название</label>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                        <label htmlFor="categoryName" className="block text-sm font-medium text-gray-700 mb-1">Название</label>
                         <input
+                            id="categoryName"
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             required
-                            className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                            placeholder="Название категории"
+                            className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="Например, Продукты"
                         />
                     </div>
 
-                    <div className="mb-4">
+                    <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Иконка</label>
-                        <div className="grid grid-cols-5 gap-2">
+                        <div className="grid grid-cols-5 gap-2 bg-gray-50 p-2 rounded-lg">
                             {icons.map((emoji, i) => (
                                 <button
                                     key={i}
                                     type="button"
-                                    className={`w-10 h-10 flex items-center justify-center rounded-full ${icon === emoji ? 'bg-indigo-100 ring-2 ring-indigo-500' : 'hover:bg-gray-100'}`}
+                                    aria-label={`Выбрать иконку ${emoji}`}
+                                    className={`w-10 h-10 text-xl flex items-center justify-center rounded-full transition-all ${icon === emoji ? 'bg-indigo-500 text-white ring-2 ring-indigo-300' : 'hover:bg-gray-200'}`}
                                     onClick={() => setIcon(emoji)}
                                 >
                                     {emoji}
@@ -69,14 +72,15 @@ function CategoryModal({ isOpen, onClose, onSave, category = null }) {
                         </div>
                     </div>
 
-                    <div className="mb-6">
+                    <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Цвет</label>
-                        <div className="flex space-x-2">
+                        <div className="flex flex-wrap gap-2 bg-gray-50 p-2 rounded-lg">
                             {colors.map((clr, i) => (
                                 <button
                                     key={i}
                                     type="button"
-                                    className={`w-8 h-8 rounded-full ${color === clr ? 'ring-2 ring-offset-2 ring-gray-400' : ''}`}
+                                    aria-label={`Выбрать цвет ${clr}`}
+                                    className={`w-8 h-8 rounded-full transition-all border-2 border-transparent ${color === clr ? 'ring-2 ring-offset-1 ring-indigo-500 border-white' : 'hover:border-gray-400'}`}
                                     style={{ backgroundColor: clr }}
                                     onClick={() => setColor(clr)}
                                 />
@@ -84,17 +88,17 @@ function CategoryModal({ isOpen, onClose, onSave, category = null }) {
                         </div>
                     </div>
 
-                    <div className="flex justify-end space-x-3">
+                    <div className="flex justify-end space-x-3 pt-4">
                         <button
                             type="button"
-                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
-                            onClick={onClose}
+                            className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                            onClick={onClose} // Кнопка Отмена по-прежнему использует прямой onClose
                         >
                             Отмена
                         </button>
                         <button
                             type="submit"
-                            className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
+                            className="px-5 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1"
                         >
                             {category ? 'Сохранить' : 'Добавить'}
                         </button>

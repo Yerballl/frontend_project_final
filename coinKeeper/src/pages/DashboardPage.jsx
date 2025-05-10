@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Link } from 'react-router-dom';
+// import { Link } from 'react-router-dom'; // Link не используется, можно убрать если нет других ссылок
 
 import BalanceDisplay from '../components/dashboard/BalanceDisplay';
 import TransactionList from '../components/transactions/TransactionList';
@@ -16,7 +16,7 @@ import {
 } from '../redux/slices/balanceSlice';
 
 import {
-  fetchCategories,
+  fetchCategories, // Этот thunk теперь загружает категории с балансами
   addCategory,
   updateCategory,
   deleteCategory,
@@ -28,6 +28,7 @@ import {
 import {
   addTransaction,
   updateTransaction,
+  deleteTransaction as apiDeleteTransaction, // Импортируем thunk для удаления транзакции
   fetchRecentTransactions,
   selectRecentTransactions,
   selectRecentTransactionsLoading,
@@ -47,17 +48,15 @@ const DashboardPage = () => {
   const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
   const [currentTransaction, setCurrentTransaction] = useState(null);
 
-  // Добавим состояние для работы с модальным окном категорий
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentCategory, setCurrentCategory] = useState(null);
 
-  // Получаем данные категорий из Redux
   const categories = useSelector(selectAllCategories);
   const categoriesLoading = useSelector(selectCategoriesLoading);
   const categoriesError = useSelector(selectCategoriesError);
 
   useEffect(() => {
-    dispatch(fetchCategories());
+    dispatch(fetchCategories()); // Загружаем категории с балансами
     dispatch(fetchUserBalance());
     dispatch(fetchRecentTransactions({ limit: 5 }));
   }, [dispatch]);
@@ -68,25 +67,55 @@ const DashboardPage = () => {
   };
 
   const handleEditTransaction = (transaction) => {
-    setCurrentTransaction(transaction);
+    // Для редактирования, нам нужна "плоская" структура транзакции, как в модальном окне
+    const editableTransaction = {
+      id: transaction.id,
+      type: transaction.type,
+      // Сумма в recentTransactions хранится как строка, и всегда положительная.
+      // Модальное окно ожидает число.
+      amount: parseFloat(transaction.amount),
+      categoryId: transaction.category_id,
+      date: transaction.transaction_date.split('T')[0], // Убедимся, что дата в формате YYYY-MM-DD
+      comment: transaction.comment || ''
+    };
+    setCurrentTransaction(editableTransaction);
     setIsTransactionModalOpen(true);
   };
 
-  const handleSaveTransaction = (transactionData) => {
-    if (transactionData.id) {
-      dispatch(updateTransaction(transactionData))
-          .then(() => {
-            dispatch(fetchUserBalance());
-            setIsTransactionModalOpen(false);
-          });
-    } else {
-      // Добавляем новую транзакцию и затем обновляем баланс
-      dispatch(addTransaction(transactionData))
-          .then(() => {
-            dispatch(fetchUserBalance());
-            setIsTransactionModalOpen(false);
-          });
+  const handleDeleteTransaction = async (transactionId) => {
+    if (window.confirm('Вы уверены, что хотите удалить эту транзакцию?')) {
+      try {
+        await dispatch(apiDeleteTransaction(transactionId)).unwrap();
+        // После успешного удаления обновляем данные
+        dispatch(fetchUserBalance());
+        dispatch(fetchCategories()); // Обновляем балансы категорий
+        dispatch(fetchRecentTransactions({ limit: 5 })); // Обновляем список недавних транзакций
+      } catch (error) {
+        console.error('Ошибка при удалении транзакции:', error);
+        // Здесь можно показать уведомление об ошибке
+      }
     }
+  };
+
+
+  const handleSaveTransaction = (transactionData) => {
+    const actionToDispatch = transactionData.id
+        ? updateTransaction({id: transactionData.id, ...transactionData}) // Передаем id и остальные данные
+        : addTransaction(transactionData);
+
+    dispatch(actionToDispatch)
+        .unwrap()
+        .then(() => {
+          dispatch(fetchUserBalance());       // Обновляем общий баланс
+          dispatch(fetchCategories());       // Обновляем балансы категорий
+          dispatch(fetchRecentTransactions({ limit: 5 })); // Обновляем список недавних транзакций
+        })
+        .catch((error) => {
+          console.error("Ошибка сохранения транзакции:", error);
+        })
+        .finally(() => {
+          setIsTransactionModalOpen(false);
+        });
   };
 
   const handleAddCategory = () => {
@@ -100,21 +129,40 @@ const DashboardPage = () => {
   };
 
   const handleDeleteCategory = (categoryId) => {
-    if (window.confirm('Вы уверены, что хотите удалить эту категорию?')) {
-      dispatch(deleteCategory(categoryId));
+    if (window.confirm('Вы уверены, что хотите удалить эту категорию? Эта операция не затронет связанные транзакции.')) {
+      dispatch(deleteCategory(categoryId))
+          .unwrap()
+          .then(() => {
+            dispatch(fetchCategories()); // Обновляем список категорий (удаленная исчезнет)
+            // Общий баланс не изменится, т.к. транзакции не удаляются с категорией
+            // Но если бы логика была другой (удаление транзакций), то и fetchUserBalance()
+          })
+          .catch((error) => {
+            console.error("Ошибка удаления категории:", error);
+          });
     }
   };
 
   const handleSaveCategory = (categoryData) => {
-    if (categoryData.id) {
-      dispatch(updateCategory({ id: categoryData.id, ...categoryData }));
-    } else {
-      dispatch(addCategory(categoryData));
-    }
+    const actionToDispatch = categoryData.id
+        ? updateCategory({ id: categoryData.id, ...categoryData })
+        : addCategory(categoryData);
+
+    dispatch(actionToDispatch)
+        .unwrap()
+        .then(() => {
+          dispatch(fetchCategories()); // Перезагружаем категории для обновления балансов
+        })
+        .catch((error) => {
+          console.error("Ошибка сохранения категории:", error);
+        })
+        .finally(() => {
+          setIsModalOpen(false);
+        });
   };
 
   return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-100 to-sky-100 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="bg-gradient-to-br from-slate-100 to-sky-100 px-4 sm:px-6 lg:px-8 py-8">
         <div className="max-w-3xl mx-auto">
           <header className="mb-10 text-center">
             <h1 className="text-4xl sm:text-5xl font-bold text-indigo-700">Панель Управления</h1>
@@ -146,6 +194,7 @@ const DashboardPage = () => {
                 isLoading={transactionsLoading}
                 error={transactionsError}
                 onEdit={handleEditTransaction}
+                onDelete={handleDeleteTransaction} // Передаем функцию удаления
             />
           </section>
 
@@ -160,7 +209,7 @@ const DashboardPage = () => {
               </button>
             </div>
             <CategoryList
-                categories={categories}
+                categories={categories} // категории теперь содержат поле 'balance'
                 isLoading={categoriesLoading}
                 error={categoriesError}
                 onEdit={handleEditCategory}
@@ -170,14 +219,14 @@ const DashboardPage = () => {
 
           <CategoryModal
               isOpen={isModalOpen}
-              onClose={() => setIsModalOpen(false)}
+              onClose={() => setIsModalOpen(false)} // Закрытие управляется здесь
               onSave={handleSaveCategory}
               category={currentCategory}
           />
 
           <TransactionModal
               isOpen={isTransactionModalOpen}
-              onClose={() => setIsTransactionModalOpen(false)}
+              onClose={() => setIsTransactionModalOpen(false)} // Закрытие управляется здесь
               onSave={handleSaveTransaction}
               transaction={currentTransaction}
           />

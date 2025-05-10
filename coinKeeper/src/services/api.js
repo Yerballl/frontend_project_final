@@ -75,15 +75,28 @@ export const logoutUser = async () => {
 };
 
 // Функции API для категорий
-export const fetchCategories = async () => {
+// Эта функция может остаться, если где-то нужны категории без балансов
+export const fetchRawCategories = async () => {
     try {
         const response = await apiClient.get('/categories');
         return response.data;
     } catch (error) {
-        console.error("Fetch categories API error:", error.response || error.message);
+        console.error("Fetch raw categories API error:", error.response || error.message);
         throw error;
     }
 };
+
+// Новая функция для получения категорий с балансами
+export const fetchCategoriesWithSummary = async () => {
+    try {
+        const response = await apiClient.get('/categories/summary');
+        return response.data;
+    } catch (error) {
+        console.error("Fetch categories with summary API error:", error.response || error.message);
+        throw error;
+    }
+};
+
 
 export const addCategory = async (categoryData) => {
     try {
@@ -141,7 +154,8 @@ export const addTransaction = async (transactionData) => {
         const formattedData = {
             category_id: transactionData.categoryId,
             type: transactionData.type,
-            amount: transactionData.amount,
+            // Бэкенд ожидает положительную сумму, тип определяет доход/расход
+            amount: Math.abs(parseFloat(transactionData.amount)),
             transaction_date: transactionData.date,
             comment: transactionData.comment
         };
@@ -159,7 +173,8 @@ export const updateTransaction = async (transactionId, transactionData) => {
         const formattedData = {};
         if (transactionData.categoryId !== undefined) formattedData.category_id = transactionData.categoryId;
         if (transactionData.type !== undefined) formattedData.type = transactionData.type;
-        if (transactionData.amount !== undefined) formattedData.amount = transactionData.amount;
+        // Бэкенд ожидает положительную сумму
+        if (transactionData.amount !== undefined) formattedData.amount = Math.abs(parseFloat(transactionData.amount));
         if (transactionData.date !== undefined) formattedData.transaction_date = transactionData.date;
         if (transactionData.comment !== undefined) formattedData.comment = transactionData.comment;
 
