@@ -1,9 +1,9 @@
-// src/store/store.js (или как у вас называется файл конфигурации стора)
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from './slices/authSlice';
 import transactionsReducer from './slices/transactionsSlice';
 import categoriesReducer from './slices/categoriesSlice';
 import balanceReducer from './slices/balanceSlice';
+import accountsReducer from './slices/accountsSlice';
 
 export const store = configureStore({
   reducer: {
@@ -11,6 +11,6 @@ export const store = configureStore({
     transactions: transactionsReducer,
     categories: categoriesReducer,
     balance: balanceReducer,
-    // ...другие ваши редюсеры
+    accounts: accountsReducer,
   },
 });
