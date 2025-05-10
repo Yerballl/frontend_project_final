@@ -162,7 +162,7 @@ const DashboardPage = () => {
   };
 
   return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-100 to-sky-100 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="bg-gradient-to-br from-slate-100 to-sky-100 px-4 sm:px-6 lg:px-8 py-8">
         <div className="max-w-3xl mx-auto">
           <header className="mb-10 text-center">
             <h1 className="text-4xl sm:text-5xl font-bold text-indigo-700">Панель Управления</h1>
