@@ -39,13 +39,18 @@ const StatsPage = () => {
     }
 
     return (
-        <div>
-            <h1>Статистика</h1>
-            {data ? (
-                <pre>{JSON.stringify(data, null, 2)}</pre>
-            ) : (
-                <p>Нет данных для отображения.</p>
-            )}
+        // Add a container for consistent padding
+        <div className="container mx-auto p-8"> {/* p-8 will be below the fixed header */}
+            <h1 className="text-3xl font-bold mb-6 text-gray-800">Статистика</h1>
+            <div className="bg-white p-6 rounded-lg shadow-lg">
+                {data ? (
+                    <pre className="text-sm overflow-x-auto">{JSON.stringify(data, null, 2)}</pre>
+                ) : (
+                    <p className="text-gray-600">Нет данных для отображения.</p>
+                )}
+                {loading && <p className="text-gray-600">Загрузка статистики...</p>}
+                {error && <p className="text-red-600">Ошибка при загрузке данных: {error}</p>}
+            </div>
         </div>
     );
 };
