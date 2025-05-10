@@ -97,5 +97,29 @@
     "comment": null,
     "created_at": "2025-05-10T18:25:03.428Z",
     "updated_at": "2025-05-10T18:25:03.428Z"
+  },
+  {
+    "id": 10,
+    "user_id": 4,
+    "account_id": 2,
+    "category_id": 3,
+    "type": "income",
+    "amount": "200.00",
+    "transaction_date": "2025-05-10",
+    "comment": null,
+    "created_at": "2025-05-10T20:49:00.727Z",
+    "updated_at": "2025-05-10T20:49:00.727Z"
+  },
+  {
+    "id": 11,
+    "user_id": 4,
+    "account_id": 1,
+    "category_id": 5,
+    "type": "expense",
+    "amount": "600.00",
+    "transaction_date": "2025-05-10",
+    "comment": "донер медина",
+    "created_at": "2025-05-10T20:53:11.134Z",
+    "updated_at": "2025-05-10T20:53:11.134Z"
   }
 ]
