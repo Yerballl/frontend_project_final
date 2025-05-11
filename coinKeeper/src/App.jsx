@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import LoginPage from './pages/LoginPage';
@@ -30,14 +31,14 @@ function App() {
     }, [dispatch]);
 
     return (
-        <div className={`flex flex-col min-h-screen bg-gray-100`}>
+        <div className={`flex flex-col min-h-screen`}>
             {isAuthenticated && (
                 <>
                     <Header />
                 </>
             )}
 
-            <main className={`app-main flex-grow ${isAuthenticated ? 'pt-16' : ''} bg-gray-100`}>
+            <main className={`app-main flex-grow ${isAuthenticated ? 'pt-16' : ''}`}>
                 <Routes>
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/register" element={<RegisterPage />} />
