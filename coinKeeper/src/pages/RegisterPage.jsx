@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useDispatch } from 'react-redux';
+import { registerUser } from '../redux/slices/authSlice';
 
 function RegisterPage() {
     const [name, setName] = useState('');
@@ -8,7 +9,7 @@ function RegisterPage() {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [error, setError] = useState('');
-    const { register } = useAuth();
+    const dispatch = useDispatch();
     const navigate = useNavigate();
 
     const handleSubmit = async (event) => {
@@ -20,17 +21,18 @@ function RegisterPage() {
             return;
         }
 
-        const success = await register({ name, email, password });
-        if (success) {
+        try {
+            await dispatch(registerUser({ name, email, password })).unwrap();
             navigate('/');
-        } else {
-            setError('Ошибка при регистрации. Попробуйте еще раз.');
+        } catch (rejectedValueOrSerializedError) {
+            setError(typeof rejectedValueOrSerializedError === 'string'
+                ? rejectedValueOrSerializedError
+                : rejectedValueOrSerializedError?.message || 'Ошибка при регистрации. Попробуйте еще раз.');
         }
     };
 
     return (
         <div className="min-h-screen flex items-stretch">
-            {/* Декоративная левая панель */}
             <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-indigo-900 via-purple-800 to-pink-700">
                 <div className="absolute inset-0 bg-black opacity-20"></div>
                 <div className="absolute -right-12 top-1/2 transform -translate-y-1/2">
@@ -75,7 +77,6 @@ function RegisterPage() {
                 </div>
             </div>
 
-            {/* Правая панель с формой */}
             <div className="w-full lg:w-1/2 flex flex-col justify-center p-6 sm:p-12 bg-white">
                 <div className="lg:hidden text-center mb-10">
                     <h1 className="text-3xl font-bold text-indigo-700">CoinKeeper</h1>

@@ -1,29 +1,31 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useDispatch } from 'react-redux';
+import { loginUser } from '../redux/slices/authSlice';
 
 function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
-    const { login } = useAuth();
+    const dispatch = useDispatch();
     const navigate = useNavigate();
 
     const handleSubmit = async (event) => {
         event.preventDefault();
         setError('');
-        const success = await login(email, password);
-        if (success) {
+        try {
+            await dispatch(loginUser({ email, password })).unwrap();
             navigate('/');
-        } else {
-            setError('Неверный email или пароль. Попробуйте снова.');
+        } catch (rejectedValueOrSerializedError) {
+            setError(typeof rejectedValueOrSerializedError === 'string'
+                ? rejectedValueOrSerializedError
+                : rejectedValueOrSerializedError?.message || 'Неверный email или пароль. Попробуйте снова.');
             setPassword('');
         }
     };
 
     return (
         <div className="min-h-screen flex items-stretch">
-            {/* Декоративная левая панель */}
             <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-indigo-900 via-purple-800 to-pink-700">
                 <div className="absolute inset-0 bg-black opacity-20"></div>
                 <div className="absolute -right-12 top-1/2 transform -translate-y-1/2">
@@ -68,7 +70,6 @@ function LoginPage() {
                 </div>
             </div>
 
-            {/* Правая панель с формой */}
             <div className="w-full lg:w-1/2 flex flex-col justify-center p-6 sm:p-12 bg-white">
                 <div className="lg:hidden text-center mb-10">
                     <h1 className="text-3xl font-bold text-indigo-700">CoinKeeper</h1>
