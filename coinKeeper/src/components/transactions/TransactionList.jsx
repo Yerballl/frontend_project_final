@@ -34,7 +34,7 @@ const TransactionList = ({ transactions, isLoading, error, onEdit, onDelete, cur
 
     return (
         <div>
-            <div className="max-h-[400px] overflow-y-auto pr-1.5">
+            <div className="overflow-y-auto pr-1.5">
                 {transactions.map(tx => {
                     const category = categoryMap[tx.category_id];
                     const account = accountMap[tx.account_id];

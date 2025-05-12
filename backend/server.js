@@ -9,16 +9,13 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-// File paths
 const usersFilePath = path.join(__dirname, 'users.json');
 const transactionsFilePath = path.join(__dirname, 'transactions.json');
 const categoriesFilePath = path.join(__dirname, 'categories.json');
 const accountsFilePath = path.join(__dirname, 'accounts.json');
 
-// JWT Secret
-const JWT_SECRET = 'nantkhun_your_strong_secret_key'; // Используйте более надежный ключ!
+const JWT_SECRET = 'nantkhun_your_strong_secret_key';
 
-// Helper: Read JSON file (creates if not exists)
 const readJsonFile = (filePath) => {
     if (!fs.existsSync(filePath)) {
         fs.writeFileSync(filePath, JSON.stringify([]), 'utf8');
@@ -29,14 +26,10 @@ const readJsonFile = (filePath) => {
         return JSON.parse(data);
     } catch (error) {
         console.error(`Error reading or parsing JSON from ${filePath}:`, error);
-        // Consider how to handle this error. For now, return empty array or throw.
-        // If file is corrupted, returning [] might lead to data loss on next write.
-        // For simplicity now, returning []
         return [];
     }
 };
 
-// Helper: Write JSON file
 const writeJsonFile = (filePath, data) => {
     try {
         fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
@@ -45,15 +38,13 @@ const writeJsonFile = (filePath, data) => {
     }
 };
 
-// Helper: Generate new ID
 const generateNewId = (items) => {
     return items.length > 0 ? Math.max(...items.map(item => item.id)) + 1 : 1;
 };
 
-// Middleware: Authenticate JWT Token
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+    const token = authHeader && authHeader.split(' ')[1];
 
     if (!token) {
         return res.status(401).json({ message: 'Доступ запрещен: токен не предоставлен' });
@@ -67,14 +58,11 @@ const authenticateToken = (req, res, next) => {
             }
             return res.status(403).json({ message: 'Доступ запрещен: невалидный токен' });
         }
-        req.user = decoded; // Contains { id, email, name }
+        req.user = decoded;
         next();
     });
 };
 
-
-// --- USERS ---
-// Register User (POST /api/users/register) - Public
 app.post('/api/users/register', (req, res) => {
     const { name, email, password } = req.body;
     if (!name || !email || !password) {
@@ -86,13 +74,11 @@ app.post('/api/users/register', (req, res) => {
         return res.status(409).json({ message: 'Пользователь с таким email уже существует' });
     }
 
-    // В реальном приложении здесь должно быть хеширование пароля
-    // const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = {
         id: generateNewId(users),
         name,
         email,
-        password, // Store plain password (NOT RECOMMENDED FOR PRODUCTION)
+        password,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
     };
@@ -109,7 +95,6 @@ app.post('/api/users/register', (req, res) => {
     });
 });
 
-// Login User (POST /api/users/login) - Public
 app.post('/api/users/login', (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) {
@@ -123,9 +108,7 @@ app.post('/api/users/login', (req, res) => {
         return res.status(401).json({ message: 'Неверные учетные данные' });
     }
 
-    // В реальном приложении здесь должно быть сравнение хешированного пароля
-    // const isMatch = await bcrypt.compare(password, user.password);
-    if (user.password !== password) { // Plain password comparison (NOT RECOMMENDED)
+    if (user.password !== password) {
         return res.status(401).json({ message: 'Неверные учетные данные' });
     }
 
@@ -139,16 +122,13 @@ app.post('/api/users/login', (req, res) => {
     });
 });
 
-// Get Current User (GET /api/users/me) - Protected
 app.get('/api/users/me', authenticateToken, (req, res) => {
     const users = readJsonFile(usersFilePath);
     const user = users.find(u => u.id === req.user.id);
 
     if (!user) {
-        // This case should ideally not happen if token is valid and user exists
         return res.status(404).json({ message: 'Пользователь не найден' });
     }
-    // Return user data without password
     res.json({
         id: user.id,
         email: user.email,
@@ -158,10 +138,8 @@ app.get('/api/users/me', authenticateToken, (req, res) => {
     });
 });
 
-// Update Current User (PUT /api/users/me) - Protected
 app.put('/api/users/me', authenticateToken, (req, res) => {
-    const { name, email } = req.body; // Allow updating name and email
-    // Password update would require current password and more complex logic
+    const { name, email, currentPassword, newPassword } = req.body;
 
     const users = readJsonFile(usersFilePath);
     const userIndex = users.findIndex(u => u.id === req.user.id);
@@ -170,29 +148,48 @@ app.put('/api/users/me', authenticateToken, (req, res) => {
         return res.status(404).json({ message: 'Пользователь не найден' });
     }
 
-    // Check if new email is already taken by another user
-    if (email && email !== users[userIndex].email && users.some(u => u.email === email && u.id !== req.user.id)) {
+    const currentUser = users[userIndex];
+    let passwordChanged = false;
+
+    if (currentPassword && newPassword) {
+        if (currentUser.password !== currentPassword) {
+            return res.status(403).json({ message: 'Текущий пароль неверен' });
+        }
+        if (newPassword.length < 3) {
+            return res.status(400).json({ message: 'Новый пароль слишком короткий (минимум 3 символа)' });
+        }
+        currentUser.password = newPassword;
+        passwordChanged = true;
+    } else if (currentPassword || newPassword) {
+        return res.status(400).json({ message: 'Для смены пароля необходимо указать текущий и новый пароли.' });
+    }
+
+    if (email && email !== currentUser.email && users.some(u => u.email === email && u.id !== req.user.id)) {
         return res.status(409).json({ message: 'Этот email уже используется другим пользователем.' });
     }
 
-    users[userIndex] = {
-        ...users[userIndex],
-        name: name || users[userIndex].name,
-        email: email || users[userIndex].email,
-        updated_at: new Date().toISOString()
-    };
+    currentUser.name = name || currentUser.name;
+    currentUser.email = email || currentUser.email;
+    currentUser.updated_at = new Date().toISOString();
+
+    users[userIndex] = currentUser;
     writeJsonFile(usersFilePath, users);
-    const updatedUser = users[userIndex];
-    res.json({
-        id: updatedUser.id,
-        email: updatedUser.email,
-        name: updatedUser.name,
-        updated_at: updatedUser.updated_at
-    });
+
+    const userResponse = {
+        id: currentUser.id,
+        email: currentUser.email,
+        name: currentUser.name,
+        updated_at: currentUser.updated_at,
+    };
+    if (passwordChanged) {
+        userResponse.message = 'Профиль и пароль успешно обновлены.';
+    } else {
+        userResponse.message = 'Профиль успешно обновлен.';
+    }
+
+    res.json(userResponse);
 });
 
-// Delete Current User (DELETE /api/users/me) - Protected
-// Note: This is a destructive operation. Consider soft deletes or more robust handling.
 app.delete('/api/users/me', authenticateToken, (req, res) => {
     let users = readJsonFile(usersFilePath);
     const userExists = users.some(u => u.id === req.user.id);
@@ -204,19 +201,12 @@ app.delete('/api/users/me', authenticateToken, (req, res) => {
     users = users.filter(u => u.id !== req.user.id);
     writeJsonFile(usersFilePath, users);
 
-    // Optionally, delete associated data (transactions, categories, accounts)
-    // For simplicity, this example does not cascade delete here.
-    // The backend logic for deleting an account *does* delete its transactions.
-
     res.json({ message: 'Пользователь успешно удален' });
 });
 
-
-// --- ACCOUNTS ---
-// Helper: Calculate balance for a single account
 const calculateAccountBalance = (accountId, userId, allTransactions, allAccounts) => {
     const account = allAccounts.find(acc => acc.id === accountId && acc.user_id === userId);
-    if (!account) return 0; // Should not happen if accountId is valid
+    if (!account) return 0;
 
     let balance = parseFloat(account.initial_balance) || 0;
     allTransactions.forEach(transaction => {
@@ -231,7 +221,6 @@ const calculateAccountBalance = (accountId, userId, allTransactions, allAccounts
     return balance;
 };
 
-// Get All User Accounts (GET /api/accounts) - Protected
 app.get('/api/accounts', authenticateToken, (req, res) => {
     const allAccounts = readJsonFile(accountsFilePath);
     const allTransactions = readJsonFile(transactionsFilePath);
@@ -244,7 +233,6 @@ app.get('/api/accounts', authenticateToken, (req, res) => {
     res.json(accountsWithBalances);
 });
 
-// Create Account (POST /api/accounts) - Protected
 app.post('/api/accounts', authenticateToken, (req, res) => {
     const { name, icon, color, initial_balance = 0 } = req.body;
     if (!name || name.trim() === "") {
@@ -264,14 +252,13 @@ app.post('/api/accounts', authenticateToken, (req, res) => {
     accounts.push(newAccount);
     writeJsonFile(accountsFilePath, accounts);
 
-    const allTransactions = readJsonFile(transactionsFilePath); // For balance calculation
+    const allTransactions = readJsonFile(transactionsFilePath);
     res.status(201).json({
         ...newAccount,
         balance: calculateAccountBalance(newAccount.id, req.user.id, allTransactions, accounts).toFixed(2)
     });
 });
 
-// Get Single Account (GET /api/accounts/:id) - Protected
 app.get('/api/accounts/:id', authenticateToken, (req, res) => {
     const accountId = parseInt(req.params.id);
     const allAccounts = readJsonFile(accountsFilePath);
@@ -287,7 +274,6 @@ app.get('/api/accounts/:id', authenticateToken, (req, res) => {
     });
 });
 
-// Update Account (PUT /api/accounts/:id) - Protected
 app.put('/api/accounts/:id', authenticateToken, (req, res) => {
     const accountId = parseInt(req.params.id);
     const { name, icon, color, initial_balance } = req.body;
@@ -318,7 +304,6 @@ app.put('/api/accounts/:id', authenticateToken, (req, res) => {
     });
 });
 
-// Delete Account (DELETE /api/accounts/:id) - Protected
 app.delete('/api/accounts/:id', authenticateToken, (req, res) => {
     const accountId = parseInt(req.params.id);
     let accounts = readJsonFile(accountsFilePath);
@@ -330,7 +315,6 @@ app.delete('/api/accounts/:id', authenticateToken, (req, res) => {
     accounts = accounts.filter(acc => acc.id !== accountId);
     writeJsonFile(accountsFilePath, accounts);
 
-    // Cascade delete transactions associated with this account
     let transactions = readJsonFile(transactionsFilePath);
     transactions = transactions.filter(t => !(t.user_id === req.user.id && t.account_id === accountId));
     writeJsonFile(transactionsFilePath, transactions);
@@ -338,25 +322,21 @@ app.delete('/api/accounts/:id', authenticateToken, (req, res) => {
     res.json({ message: 'Счет и связанные транзакции успешно удалены', id: accountId });
 });
 
-
-// --- CATEGORIES ---
-// Get All User Categories (GET /api/categories) - Protected (Raw, no balances)
 app.get('/api/categories', authenticateToken, (req, res) => {
     const allCategories = readJsonFile(categoriesFilePath);
     const userCategories = allCategories.filter(cat => cat.user_id === req.user.id);
     res.json(userCategories);
 });
 
-// Get Categories with Summary (GET /api/categories/summary) - Protected
 app.get('/api/categories/summary', authenticateToken, (req, res) => {
     const allCategories = readJsonFile(categoriesFilePath);
     const allTransactions = readJsonFile(transactionsFilePath);
     const userCategories = allCategories.filter(cat => cat.user_id === req.user.id);
-    const userTransactions = allTransactions.filter(t => t.user_id === req.user.id); // All transactions of the user
+    const userTransactions = allTransactions.filter(t => t.user_id === req.user.id);
 
     const categoriesWithSummary = userCategories.map(category => {
         let categoryBalance = 0;
-        userTransactions.forEach(transaction => { // Calculate based on all user transactions
+        userTransactions.forEach(transaction => {
             if (transaction.category_id === category.id) {
                 if (transaction.type === 'income') {
                     categoryBalance += parseFloat(transaction.amount);
@@ -370,7 +350,6 @@ app.get('/api/categories/summary', authenticateToken, (req, res) => {
     res.json(categoriesWithSummary);
 });
 
-// Create Category (POST /api/categories) - Protected
 app.post('/api/categories', authenticateToken, (req, res) => {
     const { name, icon, color } = req.body;
     if (!name || name.trim() === "") {
@@ -388,10 +367,9 @@ app.post('/api/categories', authenticateToken, (req, res) => {
     };
     categories.push(newCategory);
     writeJsonFile(categoriesFilePath, categories);
-    res.status(201).json(newCategory); // Returns raw category, summary endpoint for balance
+    res.status(201).json(newCategory);
 });
 
-// Get Single Category (GET /api/categories/:id) - Protected
 app.get('/api/categories/:id', authenticateToken, (req, res) => {
     const categoryId = parseInt(req.params.id);
     const categories = readJsonFile(categoriesFilePath);
@@ -402,7 +380,6 @@ app.get('/api/categories/:id', authenticateToken, (req, res) => {
     res.json(category);
 });
 
-// Update Category (PUT /api/categories/:id) - Protected
 app.put('/api/categories/:id', authenticateToken, (req, res) => {
     const categoryId = parseInt(req.params.id);
     const { name, icon, color } = req.body;
@@ -427,7 +404,6 @@ app.put('/api/categories/:id', authenticateToken, (req, res) => {
     res.json(categories[categoryIndex]);
 });
 
-// Delete Category (DELETE /api/categories/:id) - Protected
 app.delete('/api/categories/:id', authenticateToken, (req, res) => {
     const categoryId = parseInt(req.params.id);
     let categories = readJsonFile(categoriesFilePath);
@@ -439,35 +415,13 @@ app.delete('/api/categories/:id', authenticateToken, (req, res) => {
     categories = categories.filter(c => c.id !== categoryId);
     writeJsonFile(categoriesFilePath, categories);
 
-    // How to handle transactions with this category_id?
-    // Option 1: Set category_id to null (needs DB support or special handling)
-    // Option 2: Delete transactions (cascade)
-    // Option 3: Prevent deletion if transactions exist
-    // For now: Transactions referencing this categoryId will become "orphaned" or "uncategorized"
-    // if frontend looks up category name by ID.
-    // Consider adding a default "Uncategorized" category.
-    // Or, when deleting, update transactions:
-    /*
-    let transactions = readJsonFile(transactionsFilePath);
-    transactions.forEach(t => {
-        if (t.user_id === req.user.id && t.category_id === categoryId) {
-            t.category_id = null; // or a default "uncategorized" ID
-            t.updated_at = new Date().toISOString();
-        }
-    });
-    writeJsonFile(transactionsFilePath, transactions);
-    */
     res.json({ message: 'Категория успешно удалена', id: categoryId });
 });
 
-
-// --- TRANSACTIONS ---
-// Get All User Transactions (GET /api/transactions) - Protected (with filters)
 app.get('/api/transactions', authenticateToken, (req, res) => {
     const allTransactions = readJsonFile(transactionsFilePath);
     let userTransactions = allTransactions.filter(t => t.user_id === req.user.id);
 
-    // Filters
     if (req.query.account_id) {
         userTransactions = userTransactions.filter(t => t.account_id === parseInt(req.query.account_id));
     }
@@ -484,7 +438,6 @@ app.get('/api/transactions', authenticateToken, (req, res) => {
         userTransactions = userTransactions.filter(t => new Date(t.transaction_date) <= new Date(req.query.endDate));
     }
 
-    // Pagination
     const offset = parseInt(req.query.offset) || 0;
     const limit = parseInt(req.query.limit) || userTransactions.length;
 
@@ -494,7 +447,6 @@ app.get('/api/transactions', authenticateToken, (req, res) => {
     res.json(paginatedTransactions);
 });
 
-// Create Transaction (POST /api/transactions) - Protected
 app.post('/api/transactions', authenticateToken, (req, res) => {
     const { account_id, category_id, type, amount, transaction_date, comment } = req.body;
 
@@ -526,7 +478,7 @@ app.post('/api/transactions', authenticateToken, (req, res) => {
         account_id: parseInt(account_id),
         category_id: parseInt(category_id),
         type,
-        amount: amountValue.toFixed(2), // Store as positive, type defines flow
+        amount: amountValue.toFixed(2),
         transaction_date,
         comment: comment || null,
         created_at: new Date().toISOString(),
@@ -537,7 +489,6 @@ app.post('/api/transactions', authenticateToken, (req, res) => {
     res.status(201).json(newTransaction);
 });
 
-// Get Single Transaction (GET /api/transactions/:id) - Protected
 app.get('/api/transactions/:id', authenticateToken, (req, res) => {
     const transactionId = parseInt(req.params.id);
     const transactions = readJsonFile(transactionsFilePath);
@@ -548,7 +499,6 @@ app.get('/api/transactions/:id', authenticateToken, (req, res) => {
     res.json(transaction);
 });
 
-// Update Transaction (PUT /api/transactions/:id) - Protected
 app.put('/api/transactions/:id', authenticateToken, (req, res) => {
     const transactionId = parseInt(req.params.id);
     const { account_id, category_id, type, amount, transaction_date, comment } = req.body;
@@ -599,7 +549,6 @@ app.put('/api/transactions/:id', authenticateToken, (req, res) => {
     res.json(transactions[transactionIndex]);
 });
 
-// Delete Transaction (DELETE /api/transactions/:id) - Protected
 app.delete('/api/transactions/:id', authenticateToken, (req, res) => {
     const transactionId = parseInt(req.params.id);
     let transactions = readJsonFile(transactionsFilePath);
@@ -613,9 +562,6 @@ app.delete('/api/transactions/:id', authenticateToken, (req, res) => {
     res.json({ message: 'Транзакция успешно удалена', id: transactionId });
 });
 
-
-// --- OVERALL BALANCE ---
-// (GET /api/balance) - Protected
 app.get('/api/balance', authenticateToken, (req, res) => {
     const allAccounts = readJsonFile(accountsFilePath);
     const allTransactions = readJsonFile(transactionsFilePath);
@@ -632,7 +578,6 @@ app.get('/api/balance', authenticateToken, (req, res) => {
 const PORT = 8080;
 app.listen(PORT, () => {
     console.log(`Сервер запущен на http://localhost:${PORT} с полным CRUD.`);
-    // Ensure all JSON files exist or are created
     readJsonFile(usersFilePath);
     readJsonFile(transactionsFilePath);
     readJsonFile(categoriesFilePath);

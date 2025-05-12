@@ -1,15 +1,15 @@
 import { createSlice } from '@reduxjs/toolkit';
 
 const SETTINGS_STORAGE_KEY = 'userAppSettings';
-const loadInitialOtherSettings = () => {
+
+const loadInitialSettings = () => {
     const savedSettings = localStorage.getItem(SETTINGS_STORAGE_KEY);
     if (savedSettings) {
         try {
             const parsed = JSON.parse(savedSettings);
             return {
-                currency: parsed.currency || 'KZT',
-                notifications: typeof parsed.notifications === 'boolean' ? parsed.notifications : true,
-                language: parsed.language || 'ru'
+                currency: parsed.currency === 'USD' || parsed.currency === 'EUR' || parsed.currency === 'RUB' || parsed.currency === 'KZT' ? parsed.currency : 'KZT',
+                language: parsed.language || 'ru',
             };
         } catch (error) {
             console.error("Ошибка парсинга настроек из localStorage:", error);
@@ -17,38 +17,40 @@ const loadInitialOtherSettings = () => {
     }
     return {
         currency: 'KZT',
-        notifications: true,
-        language: 'ru'
+        language: 'ru',
     };
 };
 
-const initialOtherSettings = loadInitialOtherSettings();
-
-const initialState = {
-    ...initialOtherSettings,
-};
+const initialState = loadInitialSettings();
 
 const settingsSlice = createSlice({
     name: 'settings',
     initialState,
     reducers: {
         setAllSettings: (state, action) => {
-            const otherSettings = action.payload;
-            Object.assign(state, otherSettings);
+            const { currency, language } = action.payload;
 
+            state.currency = currency || state.currency;
+            state.language = language || state.language;
+
+            const settingsToSave = {
+                currency: state.currency,
+                language: state.language,
+            };
             try {
-                localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(otherSettings));
+                localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settingsToSave));
             } catch (error) {
-                console.error("Ошибка сохранения остальных настроек в localStorage из Redux:", error);
+                console.error("Ошибка сохранения настроек в localStorage из Redux:", error);
             }
         },
         updateCurrency: (state, action) => {
             state.currency = action.payload;
-            const otherSettingsToSave = { ...state };
-            delete otherSettingsToSave.isDarkMode;
-
+            const settingsToSave = {
+                currency: state.currency,
+                language: state.language,
+            };
             try {
-                localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(otherSettingsToSave));
+                localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settingsToSave));
             } catch (error) {
                 console.error("Ошибка сохранения настроек (валюта) в localStorage из Redux:", error);
             }

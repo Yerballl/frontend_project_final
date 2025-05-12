@@ -92,7 +92,6 @@ const transactionsSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-        // Остальной код reducer'ов не меняется
         .addCase(fetchTransactions.pending, (state) => {
           state.status = 'loading';
           state.error = null;
@@ -105,7 +104,6 @@ const transactionsSlice = createSlice({
           state.status = 'failed';
           state.error = action.payload;
         })
-        // Fetch Recent Transactions
         .addCase(fetchRecentTransactions.pending, (state) => {
           state.recentStatus = 'loading';
         })
@@ -117,13 +115,11 @@ const transactionsSlice = createSlice({
           state.recentStatus = 'failed';
           state.error = action.payload;
         })
-        // Add Transaction
         .addCase(addTransaction.fulfilled, (state, action) => {
           state.items.push(action.payload);
           state.recentItems.unshift(action.payload);
           if (state.recentItems.length > 5) state.recentItems.pop();
         })
-        // Update Transaction
         .addCase(updateTransaction.fulfilled, (state, action) => {
           const index = state.items.findIndex(t => t.id === action.payload.id);
           if (index !== -1) state.items[index] = action.payload;
@@ -142,7 +138,6 @@ const transactionsSlice = createSlice({
           state.status = 'failed';
           state.error = action.payload;
         })
-        // Delete Transaction
         .addCase(deleteTransaction.fulfilled, (state, action) => {
           state.items = state.items.filter(t => t.id !== action.payload);
           state.recentItems = state.recentItems.filter(t => t.id !== action.payload);
@@ -150,7 +145,6 @@ const transactionsSlice = createSlice({
   },
 });
 
-// Селекторы остаются без изменений
 export const selectAllTransactions = (state) => state.transactions.items;
 export const selectRecentTransactions = (state) => state.transactions.recentItems;
 export const selectTransactionsStatus = (state) => state.transactions.status;

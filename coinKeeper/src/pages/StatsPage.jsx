@@ -242,7 +242,7 @@ const StatsPage = () => {
 
 
     return (
-        <div className="container mx-auto p-4 md:p-8 bg-slate-50 text-slate-800 min-h-screen">
+        <div className="container mx-auto p-4 md:p-8 text-slate-800 min-h-screen">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl md:text-3xl font-bold text-slate-800">Статистика</h1>
             </div>
