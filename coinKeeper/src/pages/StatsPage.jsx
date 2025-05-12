@@ -26,9 +26,14 @@ ChartJS.register(
     ArcElement
 );
 
-const BASE_CURRENCY = 'RUB';
+const BASE_CURRENCY = 'KZT';
 const MOCK_EXCHANGE_RATES = {
-    [BASE_CURRENCY]: { 'RUB': 1, 'USD': 0.011, 'EUR': 0.010 },
+    [BASE_CURRENCY]: {
+        'KZT': 1,
+        'USD': 0.00212,
+        'EUR': 0.00198,
+        'RUB': 0.193,
+    },
 };
 const convertAmount = (amount, targetCurrency, rates = MOCK_EXCHANGE_RATES, sourceCurrency = BASE_CURRENCY) => {
     const numericAmount = parseFloat(amount);

@@ -1,35 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { selectAllCategories } from "../../redux/slices/categoriesSlice";
-import { selectAllAccounts } from "../../redux/slices/accountsSlice"; // Import accounts selector
+import { selectAllAccounts } from "../../redux/slices/accountsSlice";
 
 const TransactionModal = ({ isOpen, onClose, onSave, transaction = null, prefillType = null }) => {
     const categories = useSelector(selectAllCategories);
-    const accounts = useSelector(selectAllAccounts); // Get accounts from Redux state
+    const accounts = useSelector(selectAllAccounts);
 
     const [type, setType] = useState(prefillType || 'expense');
     const [amount, setAmount] = useState('');
-    const [accountId, setAccountId] = useState(''); // New state for account ID
+    const [accountId, setAccountId] = useState('');
     const [categoryId, setCategoryId] = useState('');
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [comment, setComment] = useState('');
     const [error, setError] = useState('');
 
     useEffect(() => {
-        if (isOpen) { // Reset form when modal opens
+        if (isOpen) {
             if (transaction) {
                 setType(transaction.type);
-                // Amount is stored positive in backend, modal expects positive for input
                 setAmount(String(Math.abs(parseFloat(transaction.amount))));
                 setAccountId(String(transaction.accountId || (accounts.length > 0 ? accounts[0].id : '')));
                 setCategoryId(String(transaction.categoryId));
-                // Ensure date is correctly formatted from transaction object
                 setDate(transaction.date ? transaction.date.split('T')[0] : new Date().toISOString().split('T')[0]);
                 setComment(transaction.comment || '');
             } else {
                 setType(prefillType || 'expense');
                 setAmount('');
-                // Set default account if available, otherwise empty
                 setAccountId(accounts.length > 0 ? String(accounts[0].id) : '');
                 setCategoryId('');
                 setDate(new Date().toISOString().split('T')[0]);
@@ -43,7 +40,7 @@ const TransactionModal = ({ isOpen, onClose, onSave, transaction = null, prefill
         e.preventDefault();
         setError('');
 
-        if (!amount || !categoryId || !date || !accountId) { // Added accountId check
+        if (!amount || !categoryId || !date || !accountId) {
             setError('Пожалуйста, заполните все обязательные поля: Счет, Сумма, Категория, Дата.');
             return;
         }
@@ -55,10 +52,8 @@ const TransactionModal = ({ isOpen, onClose, onSave, transaction = null, prefill
 
         const transactionData = {
             ...(transaction && { id: transaction.id }),
-            accountId: parseInt(accountId), // Pass accountId
+            accountId: parseInt(accountId),
             type,
-            // Amount will be handled by API to be stored as positive, type indicates flow
-            // For frontend representation in lists, we might use negative for expense
             amount: parseFloat(amount),
             categoryId: parseInt(categoryId),
             date,
@@ -66,7 +61,6 @@ const TransactionModal = ({ isOpen, onClose, onSave, transaction = null, prefill
         };
 
         onSave(transactionData);
-        // onClose(); // Let parent component handle closing after save
     };
 
     if (!isOpen) return null;
@@ -84,7 +78,6 @@ const TransactionModal = ({ isOpen, onClose, onSave, transaction = null, prefill
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    {/* Account Selector */}
                     <div>
                         <label htmlFor="accountId" className="block text-sm font-medium text-gray-700 mb-1">Счет</label>
                         <select
@@ -97,16 +90,15 @@ const TransactionModal = ({ isOpen, onClose, onSave, transaction = null, prefill
                             <option value="">Выберите счет</option>
                             {accounts.map(acc => (
                                 <option key={acc.id} value={acc.id}>
-                                    {acc.icon} {acc.name} ({parseFloat(acc.balance).toLocaleString('ru-RU')} ₽)
+                                    {acc.icon} {acc.name} ({new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'KZT', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(parseFloat(acc.balance || 0))})
                                 </option>
                             ))}
                         </select>
                         {accounts.length === 0 && <p className="text-xs text-gray-500 mt-1">Сначала добавьте счет в разделе "Счета".</p>}
                     </div>
 
-                    {/* Type and Amount */}
                     <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-4 sm:space-y-0">
-                        {!prefillType && ( // Only show type selector if not prefilled (e.g. general add transaction)
+                        {!prefillType && (
                             <div className="w-full sm:w-1/2">
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Тип</label>
                                 <div className="flex rounded-lg border border-gray-300 overflow-hidden">
@@ -148,7 +140,6 @@ const TransactionModal = ({ isOpen, onClose, onSave, transaction = null, prefill
                         </div>
                     </div>
 
-                    {/* Category Selector */}
                     <div>
                         <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700 mb-1">Категория</label>
                         <select
@@ -167,7 +158,6 @@ const TransactionModal = ({ isOpen, onClose, onSave, transaction = null, prefill
                         </select>
                     </div>
 
-                    {/* Date */}
                     <div>
                         <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">Дата</label>
                         <input
@@ -180,7 +170,6 @@ const TransactionModal = ({ isOpen, onClose, onSave, transaction = null, prefill
                         />
                     </div>
 
-                    {/* Comment */}
                     <div>
                         <label htmlFor="comment" className="block text-sm font-medium text-gray-700 mb-1">Комментарий</label>
                         <textarea
@@ -193,7 +182,6 @@ const TransactionModal = ({ isOpen, onClose, onSave, transaction = null, prefill
                         />
                     </div>
 
-                    {/* Action Buttons */}
                     <div className="flex justify-end space-x-3 pt-4">
                         <button
                             type="button"
@@ -205,7 +193,7 @@ const TransactionModal = ({ isOpen, onClose, onSave, transaction = null, prefill
                         <button
                             type="submit"
                             className="px-5 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1"
-                            disabled={accounts.length === 0 && !transaction} // Disable add if no accounts, but allow edit
+                            disabled={accounts.length === 0 && !transaction}
                         >
                             {transaction ? 'Сохранить' : 'Добавить'}
                         </button>

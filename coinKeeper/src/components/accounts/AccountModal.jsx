@@ -1,10 +1,9 @@
-// src/components/accounts/AccountModal.jsx
 import React, { useState, useEffect } from 'react';
 
 const AccountModal = ({ isOpen, onClose, onSave, account = null }) => {
     const [name, setName] = useState('');
-    const [icon, setIcon] = useState('💰'); // Default icon
-    const [color, setColor] = useState('#4CAF50'); // Default color
+    const [icon, setIcon] = useState('💰');
+    const [color, setColor] = useState('#4CAF50');
     const [initialBalance, setInitialBalance] = useState('');
     const [error, setError] = useState('');
 
@@ -18,8 +17,6 @@ const AccountModal = ({ isOpen, onClose, onSave, account = null }) => {
                 setName(account.name || '');
                 setIcon(account.icon || '💰');
                 setColor(account.color || '#4CAF50');
-                // Initial balance is only for creation or if explicitly editable
-                // For edit, usually the balance is calculated, not set directly unless it's initial.
                 setInitialBalance(account.initial_balance !== undefined ? String(account.initial_balance) : '');
             } else {
                 setName('');
@@ -40,7 +37,7 @@ const AccountModal = ({ isOpen, onClose, onSave, account = null }) => {
             return;
         }
         const balanceValue = parseFloat(initialBalance);
-        if (isNaN(balanceValue) && (account === null || initialBalance.trim() !== '')) { // Allow empty initial_balance string for edit if not changing
+        if (isNaN(balanceValue) && (account === null || initialBalance.trim() !== '')) {
             setError('Начальный баланс должен быть числом.');
             return;
         }
@@ -49,7 +46,7 @@ const AccountModal = ({ isOpen, onClose, onSave, account = null }) => {
             name: name.trim(),
             icon,
             color,
-            initial_balance: initialBalance.trim() === '' ? (account ? account.initial_balance : 0) : balanceValue, // Keep old if empty during edit
+            initial_balance: initialBalance.trim() === '' ? (account ? account.initial_balance : 0) : balanceValue,
         };
 
         onSave(account ? { ...accountData, id: account.id } : accountData);

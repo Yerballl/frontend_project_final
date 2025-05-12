@@ -38,5 +38,25 @@
     "initial_balance": 1000,
     "created_at": "2025-05-11T18:04:02.725Z",
     "updated_at": "2025-05-11T18:04:02.725Z"
+  },
+  {
+    "id": 5,
+    "user_id": 4,
+    "name": "Home Credit",
+    "icon": "💳",
+    "color": "#F44336",
+    "initial_balance": 0,
+    "created_at": "2025-05-12T07:01:27.473Z",
+    "updated_at": "2025-05-12T07:01:27.473Z"
+  },
+  {
+    "id": 6,
+    "user_id": 4,
+    "name": "Qiwi",
+    "icon": "👛",
+    "color": "#FFC107",
+    "initial_balance": 0,
+    "created_at": "2025-05-12T07:05:19.779Z",
+    "updated_at": "2025-05-12T07:05:19.779Z"
   }
 ]

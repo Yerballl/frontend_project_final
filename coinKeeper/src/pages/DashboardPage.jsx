@@ -15,12 +15,13 @@ import TransactionModal from '../components/transactions/TransactionModal';
 import CategoryModal from '../components/categories/CategoryModal';
 import AccountModal from '../components/accounts/AccountModal';
 
-const BASE_CURRENCY = 'RUB';
+const BASE_CURRENCY = 'KZT';
 const MOCK_EXCHANGE_RATES = {
   [BASE_CURRENCY]: {
-    'RUB': 1,
-    'USD': 0.011,
-    'EUR': 0.010,
+    'KZT': 1,
+    'USD': 0.00212,
+    'EUR': 0.00198,
+    'RUB': 0.193,
   },
 };
 

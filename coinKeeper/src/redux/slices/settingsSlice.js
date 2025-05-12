@@ -6,13 +6,17 @@ const loadInitialOtherSettings = () => {
     if (savedSettings) {
         try {
             const parsed = JSON.parse(savedSettings);
-            return parsed;
+            return {
+                currency: parsed.currency || 'KZT',
+                notifications: typeof parsed.notifications === 'boolean' ? parsed.notifications : true,
+                language: parsed.language || 'ru'
+            };
         } catch (error) {
             console.error("Ошибка парсинга настроек из localStorage:", error);
         }
     }
     return {
-        currency: 'RUB',
+        currency: 'KZT',
         notifications: true,
         language: 'ru'
     };
