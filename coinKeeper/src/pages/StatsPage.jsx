@@ -26,9 +26,14 @@ ChartJS.register(
     ArcElement
 );
 
-const BASE_CURRENCY = 'RUB';
+const BASE_CURRENCY = 'KZT';
 const MOCK_EXCHANGE_RATES = {
-    [BASE_CURRENCY]: { 'RUB': 1, 'USD': 0.011, 'EUR': 0.010 },
+    [BASE_CURRENCY]: {
+        'KZT': 1,
+        'USD': 0.00212,
+        'EUR': 0.00198,
+        'RUB': 0.193,
+    },
 };
 const convertAmount = (amount, targetCurrency, rates = MOCK_EXCHANGE_RATES, sourceCurrency = BASE_CURRENCY) => {
     const numericAmount = parseFloat(amount);
@@ -237,7 +242,7 @@ const StatsPage = () => {
 
 
     return (
-        <div className="container mx-auto p-4 md:p-8 bg-slate-50 text-slate-800 min-h-screen">
+        <div className="container mx-auto p-4 md:p-8 text-slate-800 min-h-screen">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl md:text-3xl font-bold text-slate-800">Статистика</h1>
             </div>

@@ -1,27 +1,5 @@
 [
   {
-    "id": 1,
-    "user_id": 4,
-    "category_id": 5,
-    "type": "income",
-    "amount": "10000.00",
-    "transaction_date": "2025-05-09",
-    "comment": "На донер",
-    "created_at": "2025-05-09T19:08:44.629Z",
-    "updated_at": "2025-05-09T19:08:44.629Z"
-  },
-  {
-    "id": 2,
-    "user_id": 4,
-    "category_id": 4,
-    "type": "income",
-    "amount": "5000.00",
-    "transaction_date": "2025-05-08",
-    "comment": "Купил цифры",
-    "created_at": "2025-05-09T19:17:15.318Z",
-    "updated_at": "2025-05-09T19:17:15.318Z"
-  },
-  {
     "id": 3,
     "user_id": 4,
     "category_id": 3,
@@ -100,18 +78,6 @@
     "updated_at": "2025-05-10T20:49:00.727Z"
   },
   {
-    "id": 11,
-    "user_id": 4,
-    "account_id": 1,
-    "category_id": 5,
-    "type": "expense",
-    "amount": "600.00",
-    "transaction_date": "2025-05-10",
-    "comment": "донер медина",
-    "created_at": "2025-05-10T20:53:11.134Z",
-    "updated_at": "2025-05-10T20:53:11.134Z"
-  },
-  {
     "id": 12,
     "user_id": 4,
     "account_id": 4,
@@ -122,5 +88,53 @@
     "comment": null,
     "created_at": "2025-05-11T18:04:22.081Z",
     "updated_at": "2025-05-11T18:04:22.081Z"
+  },
+  {
+    "id": 13,
+    "user_id": 4,
+    "account_id": 1,
+    "category_id": 4,
+    "type": "expense",
+    "amount": "1550.00",
+    "transaction_date": "2025-05-12",
+    "comment": null,
+    "created_at": "2025-05-12T09:08:01.242Z",
+    "updated_at": "2025-05-12T09:08:01.242Z"
+  },
+  {
+    "id": 14,
+    "user_id": 4,
+    "account_id": 1,
+    "category_id": 9,
+    "type": "expense",
+    "amount": "2325.00",
+    "transaction_date": "2025-05-12",
+    "comment": null,
+    "created_at": "2025-05-12T09:08:22.333Z",
+    "updated_at": "2025-05-12T09:08:22.333Z"
+  },
+  {
+    "id": 15,
+    "user_id": 4,
+    "account_id": 1,
+    "category_id": 4,
+    "type": "income",
+    "amount": "20000.00",
+    "transaction_date": "2025-05-12",
+    "comment": null,
+    "created_at": "2025-05-12T09:09:44.395Z",
+    "updated_at": "2025-05-12T09:09:44.395Z"
+  },
+  {
+    "id": 16,
+    "user_id": 4,
+    "account_id": 1,
+    "category_id": 9,
+    "type": "income",
+    "amount": "5000.00",
+    "transaction_date": "2025-05-12",
+    "comment": null,
+    "created_at": "2025-05-12T09:09:58.322Z",
+    "updated_at": "2025-05-12T09:09:58.322Z"
   }
 ]

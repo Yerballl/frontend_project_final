@@ -20,7 +20,6 @@ export const setAuthToken = (token) => {
     }
 };
 
-// --- USER AUTH ---
 export const loginUser = async (credentials) => {
     try {
         const response = await apiClient.post(`/users/login`, credentials);
@@ -46,24 +45,52 @@ export const logoutUser = async () => {
     catch (error) { console.error("Logout error:", error.response || error.message); setAuthToken(null); throw error; }
 };
 
-// --- CATEGORIES ---
-export const fetchRawCategories = async () => { /* ... existing code ... */ };
+export const fetchRawCategories = async () => {};
 export const fetchCategoriesWithSummary = async () => {
     try {
         const response = await apiClient.get('/categories/summary');
         return response.data;
-    } catch (error) { console.error("Fetch categories with summary API error:", error.response || error.message); throw error; }
+    } catch (error) {
+        console.error("Fetch categories with summary API error:", error.response || error.message);
+        throw error;
+    }
 };
-export const addCategory = async (categoryData) => { /* ... existing code ... */ };
-export const updateCategory = async (categoryId, categoryData) => { /* ... existing code ... */ };
-export const deleteCategory = async (categoryId) => { /* ... existing code ... */ };
+
+export const addCategory = async (categoryData) => {
+    try {
+        const response = await apiClient.post('/categories', categoryData);
+        return response.data;
+    } catch (error) {
+        console.error("Add category API error:", error.response || error.message);
+        throw error;
+    }
+};
+
+export const updateCategory = async (categoryId, categoryData) => {
+    try {
+        const response = await apiClient.put(`/categories/${categoryId}`, categoryData);
+        return response.data;
+    } catch (error) {
+        console.error("Update category API error:", error.response || error.message);
+        throw error;
+    }
+};
+
+export const deleteCategory = async (categoryId) => {
+    try {
+        const response = await apiClient.delete(`/categories/${categoryId}`);
+        return response.data;
+    } catch (error) {
+        console.error("Delete category API error:", error.response || error.message);
+        throw error;
+    }
+};
 
 
-// --- ACCOUNTS ---
 export const fetchAccounts = async () => {
     try {
         const response = await apiClient.get('/accounts');
-        return response.data; // Expects accounts with calculated balances
+        return response.data;
     } catch (error) {
         console.error("Fetch accounts API error:", error.response || error.message);
         throw error;
@@ -92,9 +119,8 @@ export const updateAccount = async (accountId, accountData) => {
 
 export const deleteAccount = async (accountId) => {
     try {
-        // Backend should return { message: '...', id: accountId }
         const response = await apiClient.delete(`/accounts/${accountId}`);
-        return { ...response.data, id: accountId }; // Ensure ID is part of the resolved value for slice
+        return { ...response.data, id: accountId };
     } catch (error) {
         console.error("Delete account API error:", error.response || error.message);
         throw error;
@@ -102,7 +128,6 @@ export const deleteAccount = async (accountId) => {
 };
 
 
-// --- TRANSACTIONS ---
 export const fetchTransactions = async (filters = {}) => {
     try {
         const queryParams = new URLSearchParams();
@@ -112,7 +137,7 @@ export const fetchTransactions = async (filters = {}) => {
         if (filters.endDate) queryParams.append('endDate', filters.endDate);
         if (filters.type) queryParams.append('type', filters.type);
         if (filters.categoryId) queryParams.append('categoryId', filters.categoryId);
-        if (filters.account_id) queryParams.append('account_id', filters.account_id); // Add account_id filter
+        if (filters.account_id) queryParams.append('account_id', filters.account_id);
 
         const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
         const response = await apiClient.get(`/transactions${query}`);
@@ -122,9 +147,8 @@ export const fetchTransactions = async (filters = {}) => {
 
 export const addTransaction = async (transactionData) => {
     try {
-        // Ensure account_id is part of transactionData from the modal
         const formattedData = {
-            account_id: transactionData.accountId, // Ensure this matches field from modal
+            account_id: transactionData.accountId,
             category_id: transactionData.categoryId,
             type: transactionData.type,
             amount: Math.abs(parseFloat(transactionData.amount)),
@@ -156,4 +180,14 @@ export const deleteTransaction = async (transactionId) => {
         const response = await apiClient.delete(`/transactions/${transactionId}`);
         return response.data;
     } catch (error) { console.error("Delete transaction API error:", error.response || error.message); throw error; }
+};
+
+export const updateUserProfile = async (userData) => {
+    try {
+        const response = await apiClient.put('/users/me', userData);
+        return response.data;
+    } catch (error) {
+        console.error("Update user profile API error:", error.response || error.message);
+        throw error;
+    }
 };

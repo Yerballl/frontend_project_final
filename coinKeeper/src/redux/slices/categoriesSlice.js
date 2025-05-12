@@ -1,16 +1,16 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import {
-    fetchCategoriesWithSummary as apiFetchCategoriesWithSummary, // Используем новую функцию
+    fetchCategoriesWithSummary as apiFetchCategoriesWithSummary,
     addCategory as apiAddCategory,
     updateCategory as apiUpdateCategory,
     deleteCategory as apiDeleteCategory
 } from '../../services/api';
 
 export const fetchCategories = createAsyncThunk(
-    'categories/fetchCategories', // Имя thunk остается прежним для минимизации рефакторинга
+    'categories/fetchCategories',
     async (_, { rejectWithValue }) => {
         try {
-            const data = await apiFetchCategoriesWithSummary(); // Вызываем функцию, получающую категории с балансами
+            const data = await apiFetchCategoriesWithSummary();
             return data;
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || 'Ошибка загрузки категорий со сводкой');
@@ -23,7 +23,7 @@ export const addCategory = createAsyncThunk(
     async (categoryData, { rejectWithValue }) => {
         try {
             const data = await apiAddCategory(categoryData);
-            return data; // Возвращаем созданную категорию
+            return data;
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || 'Ошибка добавления категории');
         }
@@ -35,7 +35,7 @@ export const updateCategory = createAsyncThunk(
     async ({ id, ...categoryData }, { rejectWithValue }) => {
         try {
             const data = await apiUpdateCategory(id, categoryData);
-            return data; // Возвращаем обновленную категорию
+            return data;
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || 'Ошибка обновления категории');
         }
@@ -47,7 +47,7 @@ export const deleteCategory = createAsyncThunk(
     async (categoryId, { rejectWithValue }) => {
         try {
             await apiDeleteCategory(categoryId);
-            return categoryId; // Возвращаем ID для удаления из состояния
+            return categoryId;
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || 'Ошибка удаления категории');
         }
@@ -55,8 +55,8 @@ export const deleteCategory = createAsyncThunk(
 );
 
 const initialState = {
-    items: [], // Теперь будут содержать категории с полем 'balance'
-    status: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed'
+    items: [],
+    status: 'idle',
     error: null,
 };
 
@@ -66,44 +66,35 @@ const categoriesSlice = createSlice({
     reducers: {},
     extraReducers: (builder) => {
         builder
-            // Fetch Categories (теперь с балансами)
             .addCase(fetchCategories.pending, (state) => {
                 state.status = 'loading';
                 state.error = null;
             })
             .addCase(fetchCategories.fulfilled, (state, action) => {
                 state.status = 'succeeded';
-                state.items = action.payload; // action.payload теперь включает 'balance'
+                state.items = action.payload;
             })
             .addCase(fetchCategories.rejected, (state, action) => {
                 state.status = 'failed';
                 state.error = action.payload;
             })
-            // Add Category
             .addCase(addCategory.fulfilled, (state, action) => {
-                // Оптимистичное добавление. Баланс будет обновлен при следующем fetchCategories.
-                // Добавляем новый элемент с временным балансом 0 или без него,
-                // так как DashboardPage вызовет fetchCategories для получения актуальных данных.
                 state.items.push({ ...action.payload, balance: "0.00" });
             })
             .addCase(addCategory.rejected, (state, action) => {
-                state.error = action.payload; // Можно записать ошибку
+                state.error = action.payload;
             })
-            // Update Category
             .addCase(updateCategory.fulfilled, (state, action) => {
                 const index = state.items.findIndex(c => c.id === action.payload.id);
                 if (index !== -1) {
-                    // Сохраняем существующий баланс, если action.payload (ответ от PUT) его не содержит,
-                    // и обновляем остальные поля. Баланс обновится при следующем fetchCategories.
                     state.items[index] = { ...state.items[index], ...action.payload };
                 }
             })
             .addCase(updateCategory.rejected, (state, action) => {
                 state.error = action.payload;
             })
-            // Delete Category
             .addCase(deleteCategory.fulfilled, (state, action) => {
-                state.items = state.items.filter(c => c.id !== action.payload); // action.payload это categoryId
+                state.items = state.items.filter(c => c.id !== action.payload);
             })
             .addCase(deleteCategory.rejected, (state, action) => {
                 state.error = action.payload;

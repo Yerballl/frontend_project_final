@@ -4,11 +4,9 @@ import {
   registerUser as apiRegister,
   fetchUserProfile,
   logoutUser as apiLogout,
-  setAuthToken
+  setAuthToken,
+  updateUserProfile as apiUpdateUserProfile
 } from '../../services/api';
-
-// Удаляем все mock-функции API (apiLogin, apiRegister, apiFetchProfile, apiLogout),
-// так как теперь используем реальные функции из api.js
 
 export const loginUser = createAsyncThunk(
     'auth/login',
@@ -21,6 +19,17 @@ export const loginUser = createAsyncThunk(
     }
 );
 
+export const updateUserProfileData = createAsyncThunk(
+    'auth/updateUserProfile',
+    async (userData, { getState, rejectWithValue }) => {
+      try {
+        const data = await apiUpdateUserProfile(userData);
+        return data;
+      } catch (error) {
+        return rejectWithValue(error.response?.data?.message || 'Ошибка обновления профиля');
+      }
+    }
+);
 export const registerUser = createAsyncThunk(
     'auth/register',
     async (userData, { rejectWithValue }) => {
@@ -53,7 +62,6 @@ export const checkAuthAndFetchProfile = createAsyncThunk(
           return rejectWithValue('Нет токена для аутентификации');
         }
 
-        // Убедимся, что токен установлен перед запросом
         setAuthToken(token);
 
         const userProfile = await fetchUserProfile();
@@ -68,25 +76,18 @@ const initialState = {
   user: null,
   token: localStorage.getItem('authToken') || null,
   isAuthenticated: !!localStorage.getItem('authToken'),
-  status: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed'
+  status: 'idle',
+  updateStatus: 'idle',
   error: null,
+  updateError: null,
 };
 
 const authSlice = createSlice({
   name: 'auth',
   initialState,
-  reducers: {
-    // Можно использовать для ручной установки токена, если это необходимо
-    // setToken: (state, action) => {
-    //   state.token = action.payload;
-    //   state.isAuthenticated = !!action.payload;
-    //   if (action.payload) localStorage.setItem('authToken', action.payload);
-    //   else localStorage.removeItem('authToken');
-    // },
-  },
+  reducers: {},
   extraReducers: (builder) => {
     builder
-      // Login
       .addCase(loginUser.pending, (state) => {
         state.status = 'loading';
         state.error = null;
@@ -104,7 +105,6 @@ const authSlice = createSlice({
         state.user = null;
         state.token = null;
       })
-      // Register
       .addCase(registerUser.pending, (state) => {
         state.status = 'loading';
         state.error = null;
@@ -122,7 +122,6 @@ const authSlice = createSlice({
         state.user = null;
         state.token = null;
       })
-      // Logout
       .addCase(logoutUser.fulfilled, (state) => {
         state.user = null;
         state.token = null;
@@ -130,14 +129,13 @@ const authSlice = createSlice({
         state.status = 'idle';
         state.error = null;
       })
-      .addCase(logoutUser.rejected, (state, action) => { // Если выход с ошибкой, все равно чистим фронт
+      .addCase(logoutUser.rejected, (state, action) => {
         state.user = null;
         state.token = null;
         state.isAuthenticated = false;
         state.status = 'failed';
-        state.error = action.payload; // Можно записать ошибку, если это важно
+        state.error = action.payload;
       })
-      // Check Auth and Fetch Profile
       .addCase(checkAuthAndFetchProfile.pending, (state) => {
         state.status = 'loading';
         state.error = null;
@@ -145,7 +143,7 @@ const authSlice = createSlice({
       .addCase(checkAuthAndFetchProfile.fulfilled, (state, action) => {
         state.status = 'succeeded';
         state.user = action.payload.user;
-        state.token = action.payload.token; // Токен уже должен быть, но можно обновить, если API его возвращает
+        state.token = action.payload.token;
         state.isAuthenticated = true;
       })
       .addCase(checkAuthAndFetchProfile.rejected, (state, action) => {
@@ -154,16 +152,33 @@ const authSlice = createSlice({
         state.user = null;
         state.token = null;
         state.isAuthenticated = false;
-      });
+      })
+        .addCase(updateUserProfileData.pending, (state) => {
+          state.updateStatus = 'loading';
+          state.updateError = null;
+        })
+        .addCase(updateUserProfileData.fulfilled, (state, action) => {
+          state.updateStatus = 'succeeded';
+
+          if (state.user && action.payload.id === state.user.id) {
+            state.user.name = action.payload.name;
+            state.user.email = action.payload.email;
+            state.user.updated_at = action.payload.updated_at;
+          }
+        })
+        .addCase(updateUserProfileData.rejected, (state, action) => {
+          state.updateStatus = 'failed';
+          state.updateError = action.payload;
+        });
   },
 });
-
-// export const { setToken } = authSlice.actions;
 
 export const selectCurrentUser = (state) => state.auth.user;
 export const selectIsAuthenticated = (state) => state.auth.isAuthenticated;
 export const selectAuthToken = (state) => state.auth.token;
 export const selectAuthStatus = (state) => state.auth.status;
 export const selectAuthError = (state) => state.auth.error;
+export const selectUserUpdateStatus = (state) => state.auth.updateStatus;
+export const selectUserUpdateError = (state) => state.auth.updateError;
 
 export default authSlice.reducer;
