@@ -20,16 +20,6 @@
     "updated_at": "2025-05-10T20:48:30.013Z"
   },
   {
-    "id": 3,
-    "user_id": 6,
-    "name": "ь",
-    "icon": "🏦",
-    "color": "#4CAF50",
-    "initial_balance": 10,
-    "created_at": "2025-05-11T09:15:44.646Z",
-    "updated_at": "2025-05-11T09:15:44.646Z"
-  },
-  {
     "id": 4,
     "user_id": 4,
     "name": "Freedom",
